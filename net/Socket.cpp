@@ -1,6 +1,3 @@
 
 
-SOCKET::~Socket()
-{
-    socket
-} 
+SOCKET::~Socket() {}

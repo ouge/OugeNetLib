@@ -3,43 +3,38 @@
 
 #include "InetAddress.h"
 
-
-class Socket
-{
+class Socket {
 public:
-    explicit Socket(int sockfd)
-        : sockfd_(sockfd)
-    { }
+  explicit Socket(int sockfd) : sockfd_(sockfd) {}
 
-    ~Socket();
+  ~Socket();
 
-    int fd() const { return sockfd_; }
-    bool getTcpInfo(struct tcp_info*) const;
-    bool getTcpInfoString(char* buf, int len) const;
+  int fd() const { return sockfd_; }
+  bool getTcpInfo(struct tcp_info *) const;
+  bool getTcpInfoString(char *buf, int len) const;
 
-    void bindAddress(const InetAddress& localaddr);
-    
-    void listen();
+  void bindAddress(const InetAddress &localaddr);
 
-    int accept(InetAddress* peeraddr);
+  void listen();
 
-    void shutdownWrite();
-    
-    // Enable/disable TCP_NODELAY
-    void setTcpNoDelay(bool on);
+  int accept(InetAddress *peeraddr);
 
-    // Enable/disable SO_REUSEADDR
-    void setReuseAddr(bool on);
+  void shutdownWrite();
 
-    // Enable/disable SO_REUSEPORT
-    void setReusePort(bool on);
+  // Enable/disable TCP_NODELAY
+  void setTcpNoDelay(bool on);
 
-    // Enable/disable SO_KEEPALIVE
-    void setKeepAlive(bool on);
+  // Enable/disable SO_REUSEADDR
+  void setReuseAddr(bool on);
+
+  // Enable/disable SO_REUSEPORT
+  void setReusePort(bool on);
+
+  // Enable/disable SO_KEEPALIVE
+  void setKeepAlive(bool on);
 
 private:
-    const int sockfd_;
+  const int sockfd_;
 };
-
 
 #endif

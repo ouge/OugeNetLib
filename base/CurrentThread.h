@@ -1,0 +1,6 @@
+#ifndef CURRENTTHREAD_H
+#define CURRENTTHREAD_H
+
+
+
+#endif /* CURRENTTHREAD_H */

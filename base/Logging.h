@@ -1,4 +1,4 @@
-//  
+
 
 
 #ifndef LOGGING_H
@@ -121,7 +121,7 @@ T* CheckNotNull(Logger::SourceFile file, int line, const char* names, T* ptr)
 {
   if (ptr == NULL)
   {
-    //Logger(file, line, Logger::FATAL).stream() << names;
+    Logger(file, line, Logger::FATAL).stream() << names;
   }
   return ptr;
 }

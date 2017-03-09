@@ -1,5 +1,20 @@
 {
   "files.associations": {
-    "iosfwd": "cpp"
+    "cctype": "cpp",
+    "clocale": "cpp",
+    "cmath": "cpp",
+    "csignal": "cpp",
+    "cstdarg": "cpp",
+    "cstddef": "cpp",
+    "cstdio": "cpp",
+    "cstdlib": "cpp",
+    "cstring": "cpp",
+    "ctime": "cpp",
+    "cwchar": "cpp",
+    "cwctype": "cpp",
+    "cstdint": "cpp",
+    "initializer_list": "cpp",
+    "*.ipp": "cpp",
+    "chrono": "cpp"
   }
 }

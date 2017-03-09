@@ -3,10 +3,12 @@
 
 #include "Condition.h"
 #include "CountDownLatch.h"
+#include "LogStream.h"
 #include "Mutex.h"
 #include "Thread.h"
 
 #include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <functional>
 #include <memory>
 
@@ -24,13 +26,14 @@ class AsyncLogging : boost::noncopyable {
   void start();
   void stop();
 
-
  private:
   AsyncLogging(const AsyncLogging&);
   void operator=(const AsyncLogging&);
   void threadFunc();
 
-  typedef ouge::detail::FixedBuffer<ouge::detail::kLargeBuffer> Buffer;
+  using Buffer = ouge::detail::FixedBuffer<ouge::detail::kLargeBuffer>;
+  using BufferVector = boost::ptr_vector<Buffer> BufferVector;
+  using BufferPtr = BufferVector::auto_type;
 
   const int flushInterval_;
   bool running_;

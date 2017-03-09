@@ -4,34 +4,25 @@
 #include "StringPiece.h"
 #include "Types.h"
 
-#include <cassert>
-#include <cstring> 
-#include <string>
 #include <boost/noncopyable.hpp>
+#include <cassert>
+#include <cstring>
+#include <string>
 
-namespace ouge
-{
+namespace ouge {
 
-
-namespace detail
-{
+namespace detail {
 
 const int kSmallBuffer = 4000;
 const int kLargeBuffer = 4000 * 1000;
 
-template<int SIZE>
-class FixedBuffer : boost::noncopyable
-{
-
-};
-
-
+template <int SIZE>
+class FixedBuffer : boost::noncopyable {};
 }
 
-
-class LogStream : boost::noncopyable
-{
+class LogStream : boost::noncopyable {
   typedef LogStream self;
+
  public:
   typedef detail::FixedBuffer<detail::kSmallBuffer> Buffer;
   self& operator<<(bool);
@@ -58,26 +49,25 @@ class LogStream : boost::noncopyable
 
  private:
   void staticCheck();
-  template<typename T>
+  template <typename T>
   void formatInteger(T);
   Buffer buffer_;
   static const int kMaxNumericSize = 32;
 };
 
-class Fmt
-{
+class Fmt {
  public:
-  template<typename T>
+  template <typename T>
   Fmt(const char* fmt, T val);
   const char* date() const;
   int length() const;
+
  private:
   char buf_[32];
   int length_;
 };
 
 inline LogStream& operator<<(LogStream& s, const Fmt& fmt);
-  
 }
 
 #endif /* LOGSTREAM_H */

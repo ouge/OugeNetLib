@@ -31,6 +31,7 @@ class MutexLock : boost::noncopyable {
 
  private:
   friend class Condition;
+
   class UnassignGuard : boost::noncopyable {
    public:
     UnassignGuard(MutexLock &owner) : owner_(owner) { owner_.unassignHolder(); }
@@ -39,6 +40,7 @@ class MutexLock : boost::noncopyable {
    private:
     MutexLock &owner_;
   };
+
   void unassignHolder() { holder_ = 0; }
   void assignHolder() { holder_ = CurrentThread::tid(); }
   pthread_mutex_t mutex_;

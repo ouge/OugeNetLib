@@ -15,7 +15,7 @@ class Condition : boost::noncopyable {
   }
   ~Condition() { pthread_cond_destroy(&pcond_); }
   void wait() {
-    MutexLock::UnassignGuard ug(mutex_); // TODO: ????
+    MutexLock::UnassignGuard ug(mutex_);  // pthread_cond_wait() 会对 mutex_ 先解锁。
     pthread_cond_wait(&pcond_, mutex_.getPthreadMutex());
   }
   bool waitForSeconds(double seconds);

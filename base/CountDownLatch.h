@@ -6,21 +6,19 @@
 
 #include <boost/noncopyable.hpp>
 
-namespace ouge
-{
+namespace ouge {
 
-class CountDownLatch : boost::noncopyable
-{
-public:
-    explicit CountDownLatch(int count);
-    void wait();
-    void countDown();
-private:
-    mutable MutexLock mutex_;
-    Condition condition_;
-    int count_;
+class CountDownLatch : boost::noncopyable {
+ public:
+  explicit CountDownLatch(int count);
+  void wait();
+  void countDown();
+
+ private:
+  mutable MutexLock mutex_;
+  Condition condition_;
+  int count_;
 };
-
 }
 
 #endif /* COUNTDOWNLATCH_H */

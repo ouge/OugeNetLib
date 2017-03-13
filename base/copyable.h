@@ -1,8 +1,8 @@
 #ifndef BASE_COPYABLE_H
 #define BASE_COPYABLE_H
 
-class copyable {
-
-};
+namespace ouge {
+class copyable {};
+}
 
 #endif

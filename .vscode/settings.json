@@ -15,6 +15,11 @@
     "cstdint": "cpp",
     "initializer_list": "cpp",
     "*.ipp": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "string": "cpp",
+    "cassert": "cpp",
+    "vector": "cpp",
+    "utility": "cpp",
+    "slist": "cpp"
   }
 }

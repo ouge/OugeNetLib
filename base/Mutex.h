@@ -9,6 +9,7 @@
 
 namespace ouge {
 
+// Mutex class 
 class MutexLock : boost::noncopyable {
  public:
   MutexLock() : holder_(0) { pthread_mutex_init(&mutex_, NULL); }
@@ -19,6 +20,7 @@ class MutexLock : boost::noncopyable {
 
   bool isLockedByThisThread() { return holder_ == CurrentThread::tid(); }
   void assertLocked() { assert(isLockedByThisThread()); }
+
   void lock() {
     pthread_mutex_lock(&mutex_);
     assignHolder();
@@ -27,11 +29,13 @@ class MutexLock : boost::noncopyable {
     unassignHolder();
     pthread_mutex_unlock(&mutex_);
   }
+
   pthread_mutex_t *getPthreadMutex() { return &mutex_; }
 
  private:
   friend class Condition;
 
+  // RAII: Condition use this class because Condition will unlock the Mutex first
   class UnassignGuard : boost::noncopyable {
    public:
     UnassignGuard(MutexLock &owner) : owner_(owner) { owner_.unassignHolder(); }
@@ -47,6 +51,7 @@ class MutexLock : boost::noncopyable {
   pid_t holder_;
 };
 
+// RAII: lock and unlock Mutex object
 class MutexLockGuard : boost::noncopyable {
  public:
   explicit MutexLockGuard(MutexLock &mutex) : mutex_(mutex) { mutex_.lock(); }
@@ -57,8 +62,6 @@ class MutexLockGuard : boost::noncopyable {
   MutexLock &mutex_;
 };
 
-// 防止出现 MutexLockGuard(mutex_) 类似的误用
-#define MutexLockGuard(x) error "Missing guard object name"
 }
 
 #endif /* MUTEX_H */

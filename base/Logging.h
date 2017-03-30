@@ -84,28 +84,25 @@ extern Logger::LogLevel g_logLevel;
 
 inline Logger::LogLevel Logger::logLevel() { return g_logLevel; }
 
-#define LOG_TRACE                                        \
-  if (muduo::Logger::logLevel() <= muduo::Logger::TRACE) \
-  muduo::Logger(__FILE__, __LINE__, muduo::Logger::TRACE, __func__).stream()
-#define LOG_DEBUG                                        \
-  if (muduo::Logger::logLevel() <= muduo::Logger::DEBUG) \
-  muduo::Logger(__FILE__, __LINE__, muduo::Logger::DEBUG, __func__).stream()
-#define LOG_INFO                                        \
-  if (muduo::Logger::logLevel() <= muduo::Logger::INFO) \
+#define LOG_TRACE                                      \
+  if (ouge::Logger::logLevel() <= ouge::Logger::TRACE) \
+  ouge::Logger(__FILE__, __LINE__, ouge::Logger::TRACE, __func__).stream()
+#define LOG_DEBUG                                      \
+  if (ouge::Logger::logLevel() <= ouge::Logger::DEBUG) \
+  ouge::Logger(__FILE__, __LINE__, ouge::Logger::DEBUG, __func__).stream()
+#define LOG_INFO                                      \
+  if (ouge::Logger::logLevel() <= ouge::Logger::INFO) \
   muduo::Logger(__FILE__, __LINE__).stream()
-#define LOG_WARN muduo::Logger(__FILE__, __LINE__, muduo::Logger::WARN).stream()
-#define LOG_ERROR \
-  muduo::Logger(__FILE__, __LINE__, muduo::Logger::ERROR).stream()
-#define LOG_FATAL \
-  muduo::Logger(__FILE__, __LINE__, muduo::Logger::FATAL).stream()
-#define LOG_SYSERR muduo::Logger(__FILE__, __LINE__, false).stream()
-#define LOG_SYSFATAL muduo::Logger(__FILE__, __LINE__, true).stream()
+#define LOG_WARN ouge::Logger(__FILE__, __LINE__, ouge::Logger::WARN).stream()
+#define LOG_ERROR ouge::Logger(__FILE__, __LINE__, ouge::Logger::ERROR).stream()
+#define LOG_FATAL ouge::Logger(__FILE__, __LINE__, ouge::Logger::FATAL).stream()
+#define LOG_SYSERR ouge::Logger(__FILE__, __LINE__, false).stream()
+#define LOG_SYSFATAL ouge::Logger(__FILE__, __LINE__, true).stream()
 
 const char* strerror_tl(int savedErrno);
 
-#define CHECK_NOTNULL(val)                                                 \
-  ::muduo::CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", \
-                        (val))
+#define CHECK_NOTNULL(val) \
+  ::ouge::CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
 
 template <typename T>
 T* CheckNotNull(Logger::SourceFile file, int line, const char* names, T* ptr) {

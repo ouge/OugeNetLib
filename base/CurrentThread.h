@@ -4,9 +4,7 @@
 #include <pthread.h>
 #include <cstdint>
 
-namespace ouge {
-// TODO: namespace CurrentThread??
-namespace CurrentThread {
+namespace ouge::CurrentThread {
 
 extern __thread int t_cachedTid;
 extern __thread char t_tidString[32];
@@ -20,7 +18,6 @@ inline int tidStringLength();
 inline const char* name();
 bool isMainThread();
 void sleepUsec(int64_t usec);
-}
 }
 
 #endif /* CURRENTTHREAD_H */

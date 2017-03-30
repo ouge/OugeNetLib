@@ -1,8 +1,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "../base/StringPiece.h"
-#include "../base/copyable.h"
+#include "base/StringPiece.h"
+#include "base/copyable.h"
 
 #include <stdint.h>
 #include <stdio.h>

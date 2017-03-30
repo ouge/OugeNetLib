@@ -4,9 +4,7 @@
 #include <boost/noncopyable.hpp>
 #include <cstdint>
 
-namespace ouge {
-
-namespace detail {
+namespace ouge::detail {
 
 template <typename T>
 class AtomicIntegerT : boost::noncopyable {
@@ -26,6 +24,8 @@ class AtomicIntegerT : boost::noncopyable {
   volatile T value_;
 };
 }
+
+namespace ouge {
 
 using AtomicInt32 = detail::AtomicIntegerT<int32_t>;
 using AtomicInt64 = detail::AtomicIntegerT<int64_t>;

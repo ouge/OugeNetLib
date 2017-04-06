@@ -1,7 +1,7 @@
 #ifndef LOGFILE_H
 #define LOGFILE_H
 
-#include "Mutex.h"
+#include "base/Mutex.h"
 
 #include <boost/noncopyable.hpp>
 #include <memory>

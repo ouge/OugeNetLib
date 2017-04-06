@@ -36,7 +36,7 @@ void EventLoop::loop() {
   assertInLoopThread();
   looping_ = true;
   ::poll(NULL, 0, 5 * 1000);
-  LOG_TRACE << "EventLoop "  << this << " stop looping";
+  LOG_TRACE << "EventLoop " << this << " stop looping";
   looping_ = false;
 }
 }

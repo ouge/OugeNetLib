@@ -11,15 +11,14 @@
 #ifndef MUDUO_NET_TCPSERVER_H
 #define MUDUO_NET_TCPSERVER_H
 
-#include <muduo/base/Atomic.h>
-#include <muduo/base/Types.h>
-#include <muduo/net/TcpConnection.h>
+#include "base/Atomic.h"
+#include "base/Types.h"
+#include "net/TcpConnection.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <map>
-
 
 namespace muduo {
 namespace net {

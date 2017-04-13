@@ -20,6 +20,13 @@
     "cassert": "cpp",
     "vector": "cpp",
     "utility": "cpp",
-    "slist": "cpp"
+    "slist": "cpp",
+    "condition_variable": "cpp",
+    "exception": "cpp",
+    "any": "cpp",
+    "type_traits": "cpp",
+    "iosfwd": "cpp",
+    "typeinfo": "cpp",
+    "memory": "cpp"
   }
 }

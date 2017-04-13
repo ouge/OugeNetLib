@@ -4,12 +4,12 @@
 #include "Mutex.h"
 
 #include <pthread.h>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <cerrno>
 
 namespace ouge {
 
-class Condition : boost::noncopyable {
+class Condition : NonCopyable {
  public:
   explicit Condition(MutexLock& mutex) : mutex_(mutex) {
     pthread_cond_init(&pcond_, NULL);

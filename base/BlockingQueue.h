@@ -4,14 +4,14 @@
 #include "Condition.h"
 #include "Mutex.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <cassert>
 #include <deque>
 
 namespace ouge {
 
 template <typename T>
-class BlockingQueue : boost::noncopyable {
+class BlockingQueue : NonCopyable {
  public:
   BlockingQueue() : mutex_(), notEmpty_(mutex_), queue_() {}
 

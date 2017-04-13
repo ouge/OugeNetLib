@@ -4,14 +4,14 @@
 #include "Condition.h"
 #include "Thread.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <deque>
 #include <functional>
 
 namespace ouge {
 
-class ThreadPool : boost::noncopyable {
+class ThreadPool : NonCopyable {
  public:
   using Task = std::function<void()>;
 

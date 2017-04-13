@@ -4,13 +4,13 @@
 #include "base/CurrentThread.h"
 
 #include <pthread.h>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <cassert>
 
 namespace ouge {
 
 // Mutex class 
-class MutexLock : boost::noncopyable {
+class MutexLock : NonCopyable {
  public:
   MutexLock() : holder_(0) { pthread_mutex_init(&mutex_, NULL); }
   ~MutexLock() {
@@ -36,7 +36,7 @@ class MutexLock : boost::noncopyable {
   friend class Condition;
 
   // RAII: Condition use this class because Condition will unlock the Mutex first
-  class UnassignGuard : boost::noncopyable {
+  class UnassignGuard : NonCopyable{
    public:
     UnassignGuard(MutexLock &owner) : owner_(owner) { owner_.unassignHolder(); }
     ~UnassignGuard() { owner_.assignHolder(); }
@@ -52,7 +52,7 @@ class MutexLock : boost::noncopyable {
 };
 
 // RAII: lock and unlock Mutex object
-class MutexLockGuard : boost::noncopyable {
+class MutexLockGuard : NonCopyable{
  public:
   explicit MutexLockGuard(MutexLock &mutex) : mutex_(mutex) { mutex_.lock(); }
 

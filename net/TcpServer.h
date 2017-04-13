@@ -15,7 +15,7 @@
 #include "base/Types.h"
 #include "net/TcpConnection.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <map>
@@ -31,7 +31,7 @@ class EventLoopThreadPool;
 /// TCP server, supports single-threaded and thread-pool models.
 ///
 /// This is an interface class, so don't expose too much details.
-class TcpServer : boost::noncopyable {
+class TcpServer : NonCopyable {
  public:
   typedef boost::function<void(EventLoop*)> ThreadInitCallback;
   enum Option {

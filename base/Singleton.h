@@ -2,10 +2,11 @@
 #define SINGLETON_H
 
 #include <pthread.h>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 
+namespace ouge {
 template <typename T>
-class Singleton : boost::noncopyable {
+class Singleton : NonCopyable {
  public:
   static T& instance() {
     pthread_once(&ponce_, &Singleton::init);
@@ -28,5 +29,5 @@ pthread_once_t Singleton<T>::ponce_ = PTHREAD_ONCE_INIT;
 
 template <typename T>
 T* Singleton<T>::value_ = NULL;
-
+}
 #endif /* SINGLETON_H */

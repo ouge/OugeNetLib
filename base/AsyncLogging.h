@@ -1,19 +1,19 @@
 #ifndef ASYNCLOGGING_H
 #define ASYNCLOGGING_H
 
+#include "base/Copyable.h"
 #include "Condition.h"
 #include "CountDownLatch.h"
 #include "LogStream.h"
 #include "Mutex.h"
 #include "Thread.h"
 
-#include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <functional>
 #include <memory>
 
 namespace ouge {
-class AsyncLogging : boost::noncopyable {
+class AsyncLogging : NonCopyable {
  public:
   AsyncLogging(const std::string& basename, size_t rollSize,
                int flushInterval = 3);

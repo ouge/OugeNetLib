@@ -1,7 +1,7 @@
 #ifndef TIMESTAMP_H
 #define TIMESTAMP_H
 
-#include "copyable.h"
+#include "base/Copyable.h"
 
 #include <boost/operators.hpp>
 #include <cstdint>
@@ -9,7 +9,7 @@
 
 namespace ouge {
 
-class Timestamp : public ouge::copyable,
+class Timestamp : public Copyable,
                   public boost::less_than_comparable<Timestamp> {
  public:
   Timestamp();

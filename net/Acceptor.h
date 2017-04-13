@@ -2,12 +2,12 @@
 #define NET_ACCEPTOR_H
 
 #include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 
 #include "net/Channel.h"
 #include "net/Socket.h"
 
-namespace muduo {
+namespace ouge {
 namespace net {
 
 class EventLoop;
@@ -16,7 +16,7 @@ class InetAddress;
 ///
 /// Acceptor of incoming TCP connections.
 ///
-class Acceptor : boost::noncopyable {
+class Acceptor : NonCopyable {
  public:
   typedef boost::function<void(int sockfd, const InetAddress&)>
       NewConnectionCallback;

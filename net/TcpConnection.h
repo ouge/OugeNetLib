@@ -9,7 +9,7 @@
 
 #include <any>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <memory>
 
 // struct tcp_info is in <netinet/tcp.h>
@@ -21,7 +21,7 @@ namespace ouge::net {
 /// TCP connection, for both client and server usage.
 ///
 /// This is an interface class, so don't expose too much details.
-class TcpConnection : boost::noncopyable,
+class TcpConnection : NonCopyable,
                       public boost::enable_shared_from_this<TcpConnection> {
  public:
   /// Constructs a TcpConnection with a connected sockfd

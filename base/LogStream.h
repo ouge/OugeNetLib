@@ -4,7 +4,7 @@
 #include "StringPiece.h"
 #include "Types.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <cassert>
 #include <cstring>
 #include <string>
@@ -17,10 +17,10 @@ const int kSmallBuffer = 4000;
 const int kLargeBuffer = 4000 * 1000;
 
 template <int SIZE>
-class FixedBuffer : boost::noncopyable {};
+class FixedBuffer : NonCopyable {};
 }
 
-class LogStream : boost::noncopyable {
+class LogStream : NonCopyable{
   typedef LogStream self;
 
  public:

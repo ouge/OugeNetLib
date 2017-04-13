@@ -4,11 +4,11 @@
 #include "Condition.h"
 #include "Mutex.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 
 namespace ouge {
 
-class CountDownLatch : boost::noncopyable {
+class CountDownLatch : NonCopyable {
  public:
   explicit CountDownLatch(int count)
       : mutex_(), condition_(mutex_), count_(count) {}

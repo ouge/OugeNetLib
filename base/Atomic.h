@@ -1,13 +1,13 @@
 #ifndef ATOMIC_H
 #define ATOMIC_H
 
-#include <boost/noncopyable.hpp>
 #include <cstdint>
+#include "base/Copyable.h"
 
 namespace ouge::detail {
 
 template <typename T>
-class AtomicIntegerT : boost::noncopyable {
+class AtomicIntegerT : NonCopyable {
  public:
   AtomicIntegerT();
   T get();

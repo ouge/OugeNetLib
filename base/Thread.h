@@ -4,14 +4,14 @@
 #include "Atomic.h"
 
 #include <pthread.h>
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <cassert>
 #include <functional>
 #include <memory>
 
 namespace ouge {
 
-class Thread : boost::noncopyable {
+class Thread : NonCopyable {
  public:
   using ThreadFunc = std::function<void()>;
 

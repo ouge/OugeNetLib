@@ -3,7 +3,7 @@
 
 #include "base/Mutex.h"
 
-#include <boost/noncopyable.hpp>
+#include "base/Copyable.h"
 #include <memory>
 #include <string>
 
@@ -13,7 +13,7 @@ namespace FileUtil {
 class AppendFile;
 }
 
-class LogFile : boost::noncopyable {
+class LogFile : NonCopyable {
  public:
   LogFile(const std::string& basename, size_t rollSize, bool threadSafe = true,
           int flushInterval = 3, int checkEveryN = 1024);

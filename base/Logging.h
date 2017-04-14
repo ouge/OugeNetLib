@@ -40,7 +40,6 @@ class Logger {
       }
       size_ = static_cast<int>(strlen(data_));
     }
-
     const char* data_;
     int size_;
   };

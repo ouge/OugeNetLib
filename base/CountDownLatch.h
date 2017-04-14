@@ -1,10 +1,9 @@
 #ifndef COUNTDOWNLATCH_H
 #define COUNTDOWNLATCH_H
 
-#include "Condition.h"
-#include "Mutex.h"
-
+#include "base/Condition.h"
 #include "base/Copyable.h"
+#include "base/Mutex.h"
 
 namespace ouge {
 
@@ -26,6 +25,11 @@ class CountDownLatch : NonCopyable {
     if (count_ == 0) {
       condition_.notifyAll();
     }
+  }
+
+  int getCount() const {
+    MutexLockGuard lock(mutex_);
+    return count_;
   }
 
  private:

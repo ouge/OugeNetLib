@@ -3,19 +3,21 @@
 
 #include "base/Copyable.h"
 #include "base/CurrentThread.h"
+#include "base/Mutex.h"
 #include "base/Timestamp.h"
 #include "net/Callbacks.h"
 
+#include <boost/any.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <functional>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
-#include <boost/any.hpp>
 
 namespace ouge::net {
 
 class Channel;
-
-
+class Poller;
+class TimerQueue;
+class TimerId;
 
 // 一个线程中最多只有一个EventLoop
 // 不可复制
@@ -40,12 +42,10 @@ class EventLoop : NonCopyable {
   }
   bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 
-
   TimerId runAt(const Timestamp& time, TimerCallback&& cb);
+
   TimerId runAfter(double delay, TimerCallback&& cb);
   TimerId runEvery(double interval, TimerCallback&& cb);
-
-
 
   void wakeup();
   void updateChannel(Channel* channel);
@@ -61,7 +61,7 @@ class EventLoop : NonCopyable {
 
   void printActiveChannels() const;
 
-  using ChannelList = std::vector<Channel*> ;
+  using ChannelList = std::vector<Channel*>;
 
   bool looping_;
   bool quit_;
@@ -82,9 +82,7 @@ class EventLoop : NonCopyable {
 
   mutable MutexLock mutex_;
   std::vector<Functor> pendingFunctors_;  // @GuardedBy mutex_
-  
-  
-  
+
   const pid_t threadId_;
 };
 }

@@ -1,15 +1,14 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
+#include "base/Copyable.h"
 #include "base/CurrentThread.h"
 
+#include <assert.h>
 #include <pthread.h>
-#include "base/Copyable.h"
-#include <cassert>
 
 namespace ouge {
 
-// Mutex class 
 class MutexLock : NonCopyable {
  public:
   MutexLock() : holder_(0) { pthread_mutex_init(&mutex_, NULL); }
@@ -18,8 +17,8 @@ class MutexLock : NonCopyable {
     pthread_mutex_destroy(&mutex_);
   }
 
-  bool isLockedByThisThread() { return holder_ == CurrentThread::tid(); }
-  void assertLocked() { assert(isLockedByThisThread()); }
+  void assertLocked() const { assert(isLockedByThisThread()); }
+  bool isLockedByThisThread() const { return holder_ == CurrentThread::tid(); }
 
   void lock() {
     pthread_mutex_lock(&mutex_);
@@ -35,8 +34,8 @@ class MutexLock : NonCopyable {
  private:
   friend class Condition;
 
-  // RAII: Condition use this class because Condition will unlock the Mutex first
-  class UnassignGuard : NonCopyable{
+  // RAII: Condition use this class because Condition will unlock the Mutex
+  class UnassignGuard : NonCopyable {
    public:
     UnassignGuard(MutexLock &owner) : owner_(owner) { owner_.unassignHolder(); }
     ~UnassignGuard() { owner_.assignHolder(); }
@@ -52,7 +51,7 @@ class MutexLock : NonCopyable {
 };
 
 // RAII: lock and unlock Mutex object
-class MutexLockGuard : NonCopyable{
+class MutexLockGuard : NonCopyable {
  public:
   explicit MutexLockGuard(MutexLock &mutex) : mutex_(mutex) { mutex_.lock(); }
 
@@ -61,7 +60,6 @@ class MutexLockGuard : NonCopyable{
  private:
   MutexLock &mutex_;
 };
-
 }
 
 #endif /* MUTEX_H */

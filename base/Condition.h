@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include "base/Copyable.h"
 #include <cerrno>
+#include <stdint.h>
 
 namespace ouge {
 

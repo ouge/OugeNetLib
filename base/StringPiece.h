@@ -1,5 +1,6 @@
 #ifndef STRINGPIECE_H
 #define STRINGPIECE_H
+
 #include "Types.h"
 
 //#include <iosfwd>

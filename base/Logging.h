@@ -1,10 +1,9 @@
-#ifndef LOGGING_H
-#define LOGGING_H
+#ifndef BASE_LOGGING_H
+#define BASE_LOGGING_H
 
-#include "LogStream.h"
-#include "Timestamp.h"
+#include "base/LogStream.h"
+#include "base/Timestamp.h"
 
-#include <cstring>
 
 namespace ouge {
 

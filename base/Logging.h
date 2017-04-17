@@ -4,7 +4,6 @@
 #include "base/LogStream.h"
 #include "base/Timestamp.h"
 
-
 namespace ouge {
 
 class TimeZone;
@@ -63,7 +62,7 @@ class Logger {
  private:
   class Impl {
    public:
-    typedef Logger::LogLevel LogLevel;
+    using LogLevel = Logger::LogLevel;
     Impl(LogLevel level, int old_errno, const SourceFile& file, int line);
     void formatTime();
     void finish();

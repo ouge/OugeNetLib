@@ -20,8 +20,11 @@ class Logger {
     NUM_LOG_LEVELS,
   };
 
+  // 对文件名的封装，格式化文件名
+  // TODO: 区别
   class SourceFile {
    public:
+    // 可以根据数组的大小自动推断N
     template <int N>
     inline SourceFile(const char (&arr)[N]) : data_(arr), size_(N - 1) {
       const char* slash = strrchr(data_, '/');
@@ -38,6 +41,7 @@ class Logger {
       }
       size_ = static_cast<int>(strlen(data_));
     }
+
     const char* data_;
     int size_;
   };
@@ -53,13 +57,15 @@ class Logger {
   static LogLevel logLevel();
   static void setLogLevel(LogLevel level);
 
-  typedef void (*OutputFunc)(const char* msg, int len);
-  typedef void (*FlushFunc)();
+  using OutputFunc = void (*)(const char* msg, int len);
+  using FlushFunc = void (*)(void);
+
   static void setOutput(OutputFunc);
   static void setFlush(FlushFunc);
   static void setTimeZone(const TimeZone& tz);
 
  private:
+  // 具体实现
   class Impl {
    public:
     using LogLevel = Logger::LogLevel;

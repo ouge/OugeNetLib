@@ -1,13 +1,14 @@
-#include "Logging.h"
+// TODO: see
+#include "base/Logging.h"
+#include "base/CurrentThread.h"
+#include "base/LogStream.h"
+#include "base/TimeZone.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
-#include "CurrentThread.h"
-#include "TimeZone.h"
-#include "Timestamp.h"
 
 namespace ouge {
 
@@ -20,9 +21,9 @@ const char* strerror_tl(int savedErrno) {
 }
 
 Logger::LogLevel initLogLevel() {
-  if (::getenv("OUGE_LOG_TRACE"))
+  if (::getenv("MUDUO_LOG_TRACE"))
     return Logger::TRACE;
-  else if (::getenv("OUGE_LOG_DEBUG"))
+  else if (::getenv("MUDUO_LOG_DEBUG"))
     return Logger::DEBUG;
   else
     return Logger::INFO;
@@ -31,9 +32,10 @@ Logger::LogLevel initLogLevel() {
 Logger::LogLevel g_logLevel = initLogLevel();
 
 const char* LogLevelName[Logger::NUM_LOG_LEVELS] = {
-    "TRACE ", "DEBUG ", "INFO ", "WARN ", "ERROR ", "FATAL ",
+    "TRACE ", "DEBUG ", "INFO  ", "WARN  ", "ERROR ", "FATAL ",
 };
 
+// helper class for known string length at compile time
 class T {
  public:
   T(const char* str, unsigned len) : str_(str), len_(len) {
@@ -56,7 +58,7 @@ inline LogStream& operator<<(LogStream& s, const Logger::SourceFile& v) {
 
 void defaultOutput(const char* msg, int len) {
   size_t n = fwrite(msg, 1, len, stdout);
-  // TODO: check return value
+  // FIXME:check n
   (void)n;
 }
 
@@ -89,30 +91,31 @@ void Logger::Impl::formatTime() {
   int64_t microSecondsSinceEpoch = time_.microSecondsSinceEpoch();
   time_t seconds = static_cast<time_t>(microSecondsSinceEpoch /
                                        Timestamp::kMicroSecondsPerSecond);
+  int microseconds = static_cast<int>(microSecondsSinceEpoch %
+                                      Timestamp::kMicroSecondsPerSecond);
   if (seconds != t_lastSecond) {
     t_lastSecond = seconds;
     struct tm tm_time;
     if (g_logTimeZone.valid()) {
       tm_time = g_logTimeZone.toLocalTime(seconds);
     } else {
-      ::gmtime_r(&seconds, *tm_time);
+      ::gmtime_r(&seconds, &tm_time);  // FIXME TimeZone::fromUtcTime
     }
 
     int len =
-        snprint(t_time, sizeof(t_time), "%4d%02d%02d %02d:%02d:%02d",
-                tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
-                tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
+        snprintf(t_time, sizeof(t_time), "%4d%02d%02d %02d:%02d:%02d",
+                 tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
+                 tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
     assert(len == 17);
     (void)len;
   }
 
   if (g_logTimeZone.valid()) {
-    // TODO: class Fmt
     Fmt us(".%06d ", microseconds);
     assert(us.length() == 8);
     stream_ << T(t_time, 17) << T(us.data(), 8);
   } else {
-    Fmt us(".%06d ", microseconds);
+    Fmt us(".%06dZ ", microseconds);
     assert(us.length() == 9);
     stream_ << T(t_time, 17) << T(us.data(), 9);
   }
@@ -139,7 +142,7 @@ Logger::~Logger() {
   impl_.finish();
   const LogStream::Buffer& buf(stream().buffer());
   g_output(buf.data(), buf.length());
-  if (impl_level_ == FATAL) {
+  if (impl_.level_ == FATAL) {
     g_flush();
     abort();
   }
@@ -148,5 +151,7 @@ Logger::~Logger() {
 void Logger::setLogLevel(Logger::LogLevel level) { g_logLevel = level; }
 
 void Logger::setOutput(OutputFunc out) { g_output = out; }
+
+void Logger::setFlush(FlushFunc flush) { g_flush = flush; }
 
 void Logger::setTimeZone(const TimeZone& tz) { g_logTimeZone = tz; }

@@ -1,16 +1,18 @@
 #ifndef NET_TCPCONNECTION_H
 #define NET_TCPCONNECTION_H
 
-#include <base/StringPiece.h>
-#include <base/Types.h>
-#include <net/Buffer.h>
-#include <net/Callbacks.h>
-#include <net/InetAddress.h>
-
-#include <any>
-#include <boost/enable_shared_from_this.hpp>
 #include "base/Copyable.h"
+#include "base/StringPiece.h"
+#include "base/Types.h"
+#include "net/Buffer.h"
+#include "net/Callbacks.h"
+#include "net/InetAddress.h"
+
+
+#include <boost/any.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <memory>
+#include <boost/scoped_ptr.hpp>
 
 // struct tcp_info is in <netinet/tcp.h>
 struct tcp_info;

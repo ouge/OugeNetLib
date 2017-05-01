@@ -8,7 +8,6 @@
 #include "net/Callbacks.h"
 
 #include <boost/any.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <functional>
 #include <vector>
 

@@ -1,8 +1,16 @@
 #include "net/EventLoop.h"
 #include "base/CurrentThread.h"
 #include "base/Logging.h"
+#include "net/Channel.h"
+#include "net/Poller.h"
+#include "net/SocketsOps.h"
+#include "net/TimeQueue.h"
+#include "net/TimerId.h"
 
 #include <assert.h>
+#include <signal.h>
+#include <sys/eventfd.h>
+#include <functional>
 
 using namespace ouge;
 using namespace ouge::net;
@@ -32,7 +40,7 @@ class IgnoreSigPipe {
 #pragma GCC diagnostic error "-Wold-style-cast"
 
 IgnoreSigPipe initObj;
-}
+}  // namespace
 
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {
   return t_loopInThisThread;
@@ -57,8 +65,7 @@ EventLoop::EventLoop()
   } else {
     t_loopInThisThread = this;
   }
-  wakeupChannel_->setReadCallback(boost::bind(&EventLoop::handleRead, this));
-  // we are always reading the wakeupfd
+  wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
   wakeupChannel_->enableReading();
 }
 
@@ -75,7 +82,7 @@ void EventLoop::loop() {
   assert(!looping_);
   assertInLoopThread();
   looping_ = true;
-  quit_ = false;  // FIXME: what if someone calls quit() before loop() ?
+  quit_ = false;
   LOG_TRACE << "EventLoop " << this << " start looping";
 
   while (!quit_) {
@@ -85,7 +92,6 @@ void EventLoop::loop() {
     if (Logger::logLevel() <= Logger::TRACE) {
       printActiveChannels();
     }
-    // TODO: sort channel by priority
     eventHandling_ = true;
     for (ChannelList::iterator it = activeChannels_.begin();
          it != activeChannels_.end(); ++it) {

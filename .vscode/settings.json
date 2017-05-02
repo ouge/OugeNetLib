@@ -27,6 +27,7 @@
     "type_traits": "cpp",
     "iosfwd": "cpp",
     "typeinfo": "cpp",
-    "memory": "cpp"
+    "memory": "cpp",
+    "algorithm": "cpp"
   }
 }

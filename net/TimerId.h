@@ -1,16 +1,17 @@
 #ifndef MUDUO_NET_TIMERID_H
 #define MUDUO_NET_TIMERID_H
 
-#include  
+#include  "base/Copyable.h"
+#include <cstdint>
 
-namespace muduo {
+namespace ouge {
 namespace net {
 
 class Timer;
 
-class TimerId : public muduo::copyable {
+class TimerId : public Copyable {
  public:
-  TimerId() : timer_(NULL), sequence_(0) {}
+  TimerId() : timer_(nullptr), sequence_(0) {}
 
   TimerId(Timer* timer, int64_t seq) : timer_(timer), sequence_(seq) {}
 

@@ -1,71 +1,52 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is an internal header file, you should not include this.
-
-#ifndef MUDUO_NET_POLLER_H
-#define MUDUO_NET_POLLER_H
+#ifndef NET_POLLER_H
+#define NET_POLLER_H
 
 #include <map>
 #include <vector>
-#include <boost/noncopyable.hpp>
 
 #include "base/Timestamp.h"
 #include "net/EventLoop.h"
+#include "base/Copyable.h"
 
-namespace ouge
-{
-namespace net
-{
+namespace ouge {
+namespace net {
 
 class Channel;
 
-///
-/// Base class for IO Multiplexing
-///
-/// This class doesn't own the Channel objects.
-class Poller : boost::noncopyable
-{
- public:
-  typedef std::vector<Channel*> ChannelList;
+class Poller : NonCopyable {
+  public:
+    using ChannelList = std::vector<Channel*>;
 
-  Poller(EventLoop* loop);
-  virtual ~Poller();
+    Poller(EventLoop* loop);
+    virtual ~Poller();
 
-  /// Polls the I/O events.
-  /// Must be called in the loop thread.
-  virtual Timestamp poll(int timeoutMs, ChannelList* activeChannels) = 0;
+    /// Polls the I/O events.
+    /// Must be called in the loop thread.
+    virtual Timestamp poll(int timeoutMs, ChannelList* activeChannels) = 0;
 
-  /// Changes the interested I/O events.
-  /// Must be called in the loop thread.
-  virtual void updateChannel(Channel* channel) = 0;
+    /// Changes the interested I/O events.
+    /// Must be called in the loop thread.
+    virtual void updateChannel(Channel* channel) = 0;
 
-  /// Remove the channel, when it destructs.
-  /// Must be called in the loop thread.
-  virtual void removeChannel(Channel* channel) = 0;
+    /// Remove the channel, when it destructs.
+    /// Must be called in the loop thread.
+    virtual void removeChannel(Channel* channel) = 0;
 
-  virtual bool hasChannel(Channel* channel) const;
+    virtual bool hasChannel(Channel* channel) const;
 
-  static Poller* newDefaultPoller(EventLoop* loop);
+    static Poller* newDefaultPoller(EventLoop* loop);
 
-  void assertInLoopThread() const
-  {
-    ownerLoop_->assertInLoopThread();
-  }
+    void assertInLoopThread() const { ownerLoop_->assertInLoopThread(); }
 
- protected:
-  typedef std::map<int, Channel*> ChannelMap;
-  ChannelMap channels_;
+  protected:
+    using ChannelMap = std::map<int, Channel*>;
+    // TODO: weak_ptr?
+    Poller::ChannelMap channels_;
 
- private:
-  EventLoop* ownerLoop_;
+  private:
+    EventLoop* ownerLoop_;
 };
+}
+}
 
-}
-}
-#endif  // MUDUO_NET_POLLER_H
+#endif

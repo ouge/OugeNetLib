@@ -50,6 +50,7 @@
     "system_error": "cpp",
     "thread": "cpp",
     "tuple": "cpp",
-    "cerrno": "cpp"
+    "cerrno": "cpp",
+    "bitset": "cpp"
   }
 }

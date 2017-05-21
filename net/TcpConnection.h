@@ -104,7 +104,12 @@ class TcpConnection : NonCopyable,
     void connectDestroyed();    // should be called only once
 
   private:
-    enum StateE { kDisconnected, kConnecting, kConnected, kDisconnecting };
+    enum StateE {
+        kDisconnected,    // 未连接
+        kConnecting,      // 正在连接
+        kConnected,       // 已连接
+        kDisconnecting    // 正在断开
+    };
     void handleRead(Timestamp receiveTime);
     void handleWrite();
     void handleClose();
@@ -116,7 +121,7 @@ class TcpConnection : NonCopyable,
     // void shutdownAndForceCloseInLoop(double seconds);
     void forceCloseInLoop();
     void setState(StateE s) { state_ = s; }
-    const char*          stateToString() cont;
+    const char*          stateToString() const;
     void                 startReadInLoop();
     void                 stopReadInLoop();
 

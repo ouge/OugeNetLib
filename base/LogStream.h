@@ -141,7 +141,7 @@ class LogStream : NonCopyable {
     static const int kMaxNumericSize = 32;
 };
 
-class Fmt    // : boost::noncopyable
+class Fmt    // : noncopyable
 {
   public:
     template <typename T>

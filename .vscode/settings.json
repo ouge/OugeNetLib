@@ -51,6 +51,10 @@
     "thread": "cpp",
     "tuple": "cpp",
     "cerrno": "cpp",
-    "bitset": "cpp"
+    "bitset": "cpp",
+    "deque": "cpp",
+    "fstream": "cpp",
+    "valarray": "cpp",
+    "cinttypes": "cpp"
   }
 }

@@ -84,7 +84,7 @@ Socket::setTcpNoDelay(bool on) {
                  TCP_NODELAY,
                  &optval,
                  static_cast<socklen_t>(sizeof optval));
-    // FIXME CHECK
+    // FIXME: CHECK
 }
 
 void
@@ -95,12 +95,11 @@ Socket::setReuseAddr(bool on) {
                  SO_REUSEADDR,
                  &optval,
                  static_cast<socklen_t>(sizeof optval));
-    // FIXME CHECK
+    // FIXME: CHECK
 }
 
 void
 Socket::setReusePort(bool on) {
-#ifdef SO_REUSEPORT
     int optval = on ? 1 : 0;
     int ret    = ::setsockopt(sockfd_,
                            SOL_SOCKET,
@@ -110,11 +109,6 @@ Socket::setReusePort(bool on) {
     if (ret < 0 && on) {
         LOG_SYSERR << "SO_REUSEPORT failed.";
     }
-#else
-    if (on) {
-        LOG_ERROR << "SO_REUSEPORT is not supported.";
-    }
-#endif
 }
 
 void
@@ -125,5 +119,5 @@ Socket::setKeepAlive(bool on) {
                  SO_KEEPALIVE,
                  &optval,
                  static_cast<socklen_t>(sizeof optval));
-    // FIXME CHECK
+    // FIXME: CHECK
 }

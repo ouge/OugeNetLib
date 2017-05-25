@@ -17,26 +17,7 @@ using namespace ouge::net;
 
 namespace {
 
-typedef struct sockaddr SA;
-
-#if VALGRIND || defined(NO_ACCEPT4)
-void
-setNonBlockAndCloseOnExec(int sockfd) {
-    // non-block
-    int flags = ::fcntl(sockfd, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    int ret = ::fcntl(sockfd, F_SETFL, flags);
-    // FIXME check
-
-    // close-on-exec
-    flags = ::fcntl(sockfd, F_GETFD, 0);
-    flags |= FD_CLOEXEC;
-    ret = ::fcntl(sockfd, F_SETFD, flags);
-    // FIXME check
-
-    (void)ret;
-}
-#endif
+using SA = struct sockaddr;
 }
 
 struct sockaddr*
@@ -58,27 +39,18 @@ sockets::sockaddr_in_cast(const struct sockaddr* addr) {
 
 int
 sockets::createNonblockingOrDie(sa_family_t family) {
-#if VALGRIND
-    int sockfd = ::socket(family, SOCK_STREAM, IPPROTO_TCP);
-    if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::createNonblockingOrDie";
-    }
-
-    setNonBlockAndCloseOnExec(sockfd);
-#else
     int sockfd = ::socket(
             family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
     if (sockfd < 0) {
         LOG_SYSFATAL << "sockets::createNonblockingOrDie";
     }
-#endif
     return sockfd;
 }
 
 void
 sockets::bindOrDie(int sockfd, const struct sockaddr* addr) {
     int ret = ::bind(
-            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
     if (ret < 0) {
         LOG_SYSFATAL << "sockets::bindOrDie";
     }
@@ -95,15 +67,11 @@ sockets::listenOrDie(int sockfd) {
 int
 sockets::accept(int sockfd, struct sockaddr_in* addr) {
     socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-#if VALGRIND || defined(NO_ACCEPT4)
-    int connfd = ::accept(sockfd, sockaddr_cast(addr), &addrlen);
-    setNonBlockAndCloseOnExec(connfd);
-#else
-    int connfd = ::accept4(sockfd,
+    int       connfd  = ::accept4(sockfd,
                            sockaddr_cast(addr),
                            &addrlen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
-#endif
+
     if (connfd < 0) {
         int savedErrno = errno;
         LOG_SYSERR << "Socket::accept";
@@ -139,7 +107,7 @@ sockets::accept(int sockfd, struct sockaddr_in* addr) {
 int
 sockets::connect(int sockfd, const struct sockaddr* addr) {
     return ::connect(
-            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
 }
 
 ssize_t
@@ -196,15 +164,6 @@ sockets::fromIpPort(const char* ip, uint16_t port, struct sockaddr_in* addr) {
     addr->sin_family = AF_INET;
     addr->sin_port   = hostToNetwork16(port);
     if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
-        LOG_SYSERR << "sockets::fromIpPort";
-    }
-}
-
-void
-sockets::fromIpPort(const char* ip, uint16_t port, struct sockaddr_in6* addr) {
-    addr->sin6_family = AF_INET6;
-    addr->sin6_port   = hostToNetwork16(port);
-    if (::inet_pton(AF_INET6, ip, &addr->sin6_addr) <= 0) {
         LOG_SYSERR << "sockets::fromIpPort";
     }
 }

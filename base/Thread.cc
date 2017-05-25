@@ -7,8 +7,7 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/is_same.hpp>
+#include <type_traits>
 #include <memory>
 
 using namespace std;
@@ -19,8 +18,8 @@ __thread int         t_cachedTid = 0;
 __thread char        t_tidString[32];
 __thread int         t_tidStringLength = 6;
 __thread const char* t_threadName      = "unknown";
-const bool           sameType          = boost::is_same<int, pid_t>::value;
-BOOST_STATIC_ASSERT(sameType);
+
+static_assert(std::is_same<int, pid_t>::value == true);
 }
 
 namespace detail {

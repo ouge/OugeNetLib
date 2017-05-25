@@ -13,8 +13,10 @@ namespace sockets {
 #if defined(__clang__) || __GNUC_PREREQ(4, 6)
 #pragma GCC diagnostic push
 #endif
+
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+
 inline uint64_t
 hostToNetwork64(uint64_t host64) {
     return htobe64(host64);
@@ -44,6 +46,7 @@ inline uint16_t
 networkToHost16(uint16_t net16) {
     return be16toh(net16);
 }
+
 #if defined(__clang__) || __GNUC_PREREQ(4, 6)
 #pragma GCC diagnostic pop
 #else

@@ -20,7 +20,7 @@ __thread int         t_tidStringLength = 6;
 __thread const char* t_threadName      = "unknown";
 
 static_assert(std::is_same<int, pid_t>::value == true);
-}
+}    // namespace ouge::CurrentThread
 
 namespace detail {
 
@@ -102,8 +102,8 @@ startThread(void* obj) {
     delete data;
     return NULL;
 }
-}
-}
+}    // namespace ouge::detail
+}    // namespace ouge
 
 using namespace ouge;
 
@@ -142,7 +142,6 @@ Thread::Thread(const ThreadFunc& func, const string& n)
     setDefaultName();
 }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
 Thread::Thread(ThreadFunc&& func, const string& n)
         : started_(false),
           joined_(false),
@@ -152,8 +151,6 @@ Thread::Thread(ThreadFunc&& func, const string& n)
           name_(n) {
     setDefaultName();
 }
-
-#endif
 
 Thread::~Thread() {
     if (started_ && !joined_) {

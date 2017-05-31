@@ -40,7 +40,6 @@ class Poller : NonCopyable {
 
   protected:
     using ChannelMap = std::map<int, Channel*>;
-    // TODO: weak_ptr?
     Poller::ChannelMap channels_;
 
   private:

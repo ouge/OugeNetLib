@@ -24,7 +24,7 @@ static_assert(offsetof(sockaddr_in, sin_port) == 2);
 
 InetAddress::InetAddress(uint16_t port, bool loopbackOnly) {
     static_assert(offsetof(InetAddress, addr_) == 0);
-    bzero(&addr_, sizeof addr_);
+    memset(&addr_, 0, sizeof addr_);
     addr_.sin_family      = AF_INET;
     in_addr_t ip          = loopbackOnly ? kInaddrLoopback : kInaddrAny;
     addr_.sin_addr.s_addr = sockets::hostToNetwork32(ip);
@@ -32,7 +32,7 @@ InetAddress::InetAddress(uint16_t port, bool loopbackOnly) {
 }
 
 InetAddress::InetAddress(StringArg ip, uint16_t port) {
-    bzero(&addr_, sizeof addr_);
+    memset(&addr_, 0,sizeof addr_);
     sockets::fromIpPort(ip.c_str(), port, &addr_);
 }
 
@@ -69,7 +69,7 @@ InetAddress::resolve(StringArg hostname, InetAddress* out) {
     struct hostent  hent;
     struct hostent* he     = NULL;
     int             herrno = 0;
-    bzero(&hent, sizeof(hent));
+    memset(&hent, 0 , sizeof(hent));
 
     int ret = gethostbyname_r(hostname.c_str(),
                               &hent,

@@ -1,7 +1,6 @@
 #ifndef NET_TIMERQUEUE_H
 #define NET_TIMERQUEUE_H
 
-#include "base/Mutex.h"
 #include "base/Timestamp.h"
 #include "net/Callbacks.h"
 #include "net/Channel.h"
@@ -62,6 +61,7 @@ class TimerQueue : NonCopyable {
     bool           callingExpiredTimers_; /* atomic */
     ActiveTimerSet cancelingTimers_;
 };
+
 }    // namespace ouge::net
 }    // namespace ouge
 #endif

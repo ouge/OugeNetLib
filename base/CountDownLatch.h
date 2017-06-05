@@ -1,9 +1,7 @@
 #ifndef BASE_COUNTDOWNLATCH_H
 #define BASE_COUNTDOWNLATCH_H
 
-#include "base/Condition.h"
 #include "base/Copyable.h"
-#include "base/Mutex.h"
 
 namespace ouge {
 

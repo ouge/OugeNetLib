@@ -23,7 +23,7 @@ struct Transition {
 struct Comp {
     bool compareGmt;
 
-    Comp(bool gmt) : compareGmt(gmt) {}
+    explicit Comp(bool gmt) : compareGmt(gmt) {}
 
     bool operator()(const Transition& lhs, const Transition& rhs) const {
         if (compareGmt)
@@ -75,7 +75,7 @@ namespace detail {
 
 class File : NonCopyable {
   public:
-    File(const char* file) : fp_(::fopen(file, "rb")) {}
+    explicit File(const char* file) : fp_(::fopen(file, "rb")) {}
 
     ~File() {
         if (fp_) {
@@ -117,7 +117,7 @@ readTimeZoneFile(const char* zonefile, struct TimeZone::Data* data) {
         try {
             string head = f.readBytes(4);
             if (head != "TZif") throw logic_error("bad head");
-            string version = f.readBytes(1);
+            // string version = f.readBytes(1);
             f.readBytes(15);
 
             int32_t isgmtcnt = f.readInt32();
@@ -214,7 +214,7 @@ TimeZone::TimeZone(int eastOfUtc, const char* name)
 struct tm
 TimeZone::toLocalTime(time_t seconds) const {
     struct tm localTime;
-    bzero(&localTime, sizeof(localTime));
+    memset(&localTime, 0, sizeof(localTime));
     assert(data_ != NULL);
     const Data& data(*data_);
 
@@ -257,7 +257,7 @@ TimeZone::fromLocalTime(const struct tm& localTm) const {
 struct tm
 TimeZone::toUtcTime(time_t secondsSinceEpoch, bool yday) {
     struct tm utc;
-    bzero(&utc, sizeof(utc));
+    memset(&utc, 0, sizeof(utc));
     utc.tm_zone = "GMT";
     int seconds = static_cast<int>(secondsSinceEpoch % kSecondsPerDay);
     int days    = static_cast<int>(secondsSinceEpoch / kSecondsPerDay);

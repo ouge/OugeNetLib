@@ -1,3 +1,4 @@
+// TODO: 移除pthread.h
 #include "base/Thread.h"
 #include "base/CurrentThread.h"
 #include "base/Exception.h"
@@ -14,10 +15,11 @@ using namespace std;
 
 namespace ouge {
 namespace CurrentThread {
-__thread int         t_cachedTid = 0;
-__thread char        t_tidString[32];
-__thread int         t_tidStringLength = 6;
-__thread const char* t_threadName      = "unknown";
+
+thread_local int         t_cachedTid = 0;
+thread_local char        t_tidString[32];
+thread_local int         t_tidStringLength = 6;
+thread_local const char* t_threadName      = "unknown";
 
 static_assert(std::is_same<int, pid_t>::value == true);
 }    // namespace ouge::CurrentThread
@@ -130,7 +132,7 @@ CurrentThread::sleepUsec(int64_t usec) {
     ::nanosleep(&ts, NULL);
 }
 
-AtomicInt32 Thread::numCreated_;
+std::atomic<int> Thread::numCreated_;
 
 Thread::Thread(const ThreadFunc& func, const string& n)
         : started_(false),
@@ -160,7 +162,7 @@ Thread::~Thread() {
 
 void
 Thread::setDefaultName() {
-    int num = numCreated_.incrementAndGet();
+    int num = ++numCreated_;
     if (name_.empty()) {
         char buf[32];
         snprintf(buf, sizeof buf, "Thread%d", num);

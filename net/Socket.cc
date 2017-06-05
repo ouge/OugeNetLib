@@ -17,7 +17,7 @@ Socket::~Socket() { sockets::close(sockfd_); }
 bool
 Socket::getTcpInfo(struct tcp_info* tcpi) const {
     socklen_t len = sizeof(*tcpi);
-    bzero(tcpi, len);
+    memset(tcpi, 0, len);
     return ::getsockopt(sockfd_, SOL_TCP, TCP_INFO, tcpi, &len) == 0;
 }
 
@@ -63,7 +63,7 @@ Socket::listen() {
 int
 Socket::accept(InetAddress* peeraddr) {
     struct sockaddr_in addr;
-    bzero(&addr, sizeof addr);
+    memset(&addr, 0, sizeof addr);
     int connfd = sockets::accept(sockfd_, &addr);
     if (connfd >= 0) {
         peeraddr->setSockAddrInet(addr);

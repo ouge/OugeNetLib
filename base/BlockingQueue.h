@@ -1,8 +1,6 @@
 #ifndef BLOCKINGQUEUE_H
 #define BLOCKINGQUEUE_H
 
-#include "base/Condition.h"
-#include "base/Mutex.h"
 #include "base/Copyable.h"
 
 #include <cassert>

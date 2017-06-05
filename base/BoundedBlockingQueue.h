@@ -1,8 +1,6 @@
 #ifndef BOUNDEDBLOCKINGQUEUE_H
 #define BOUNDEDBLOCKINGQUEUE_H
 
-#include "base/Condition.h"
-#include "base/Mutex.h"
 #include "base/Copyable.h"
 
 #include <boost/circular_buffer.hpp>

@@ -4,7 +4,7 @@
 #include "net/Channel.h"
 #include "net/Poller.h"
 #include "net/SocketsOps.h"
-#include "net/TimeQueue.h"
+#include "net/TimerQueue.h"
 #include "net/TimerId.h"
 
 #include <assert.h>
@@ -134,7 +134,7 @@ EventLoop::runInLoop(const Functor& cb) {
 void
 EventLoop::queueInLoop(const Functor& cb) {
     {
-        MutexLockGuard lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         pendingFunctors_.push_back(cb);
     }
 
@@ -145,7 +145,7 @@ EventLoop::queueInLoop(const Functor& cb) {
 
 size_t
 EventLoop::queueSize() const {
-    MutexLockGuard lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     return pendingFunctors_.size();
 }
 
@@ -179,7 +179,7 @@ EventLoop::runInLoop(Functor&& cb) {
 void
 EventLoop::queueInLoop(Functor&& cb) {
     {
-        MutexLockGuard lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         pendingFunctors_.push_back(std::move(cb));    // emplace_back
     }
 
@@ -271,7 +271,7 @@ EventLoop::doPendingFunctors() {
     callingPendingFunctors_ = true;
 
     {
-        MutexLockGuard lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         functors.swap(pendingFunctors_);
     }
 

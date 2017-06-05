@@ -1,10 +1,11 @@
 #ifndef NET_TIMER_H
 #define NET_TIMER_H
 
-#include "base/Atomic.h"
 #include "base/Timestamp.h"
 #include "net/Callbacks.h"
 #include "base/Copyable.h"
+
+#include <atomic>
 
 namespace ouge {
 namespace net {
@@ -19,14 +20,14 @@ class Timer : NonCopyable {
               expiration_(when),
               interval_(interval),
               repeat_(interval > 0.0),
-              sequence_(s_numCreated_.incrementAndGet()) {}
+              sequence_(++s_numCreated_) {}
 
     Timer(TimerCallback&& cb, Timestamp when, double interval)
             : callback_(std::move(cb)),
               expiration_(when),
               interval_(interval),
               repeat_(interval > 0.0),
-              sequence_(s_numCreated_.incrementAndGet()) {}
+              sequence_(++s_numCreated_) {}
 
     void run() const { callback_(); }
 
@@ -36,7 +37,7 @@ class Timer : NonCopyable {
 
     void restart(Timestamp now);
 
-    static int64_t numCreated() { return s_numCreated_.get(); }
+    static int64_t numCreated() { return s_numCreated_; }
 
   private:
     const TimerCallback callback_;
@@ -45,7 +46,7 @@ class Timer : NonCopyable {
     const bool          repeat_;
     const int64_t       sequence_;
 
-    static AtomicInt64 s_numCreated_;
+    static std::atomic<int64_t> s_numCreated_;
 };
 }
 }

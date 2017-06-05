@@ -11,7 +11,6 @@
 #ifndef MUDUO_NET_TCPSERVER_H
 #define MUDUO_NET_TCPSERVER_H
 
-#include "base/Atomic.h"
 #include "base/Types.h"
 #include "net/TcpConnection.h"
 
@@ -20,6 +19,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <map>
+#include <atomic>
 
 namespace ouge {
 namespace net {
@@ -34,7 +34,7 @@ class EventLoopThreadPool;
 /// This is an interface class, so don't expose too much details.
 class TcpServer : NonCopyable {
   public:
-    typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+    using ThreadInitCallback = boost::function<void(EventLoop*)>;
     enum Option {
         kNoReusePort,
         kReusePort,
@@ -113,7 +113,7 @@ class TcpServer : NonCopyable {
     MessageCallback                        messageCallback_;
     WriteCompleteCallback                  writeCompleteCallback_;
     ThreadInitCallback                     threadInitCallback_;
-    AtomicInt32                            started_;
+    std::atomic<uint32_t>                  started_;
     // always in loop thread
     int           nextConnId_;
     ConnectionMap connections_;

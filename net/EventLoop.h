@@ -3,10 +3,10 @@
 
 #include "base/Copyable.h"
 #include "base/CurrentThread.h"
-#include "base/Mutex.h"
 #include "base/Timestamp.h"
 #include "net/Callbacks.h"
 
+#include <mutex>
 #include <boost/any.hpp>
 #include <functional>
 #include <memory>
@@ -108,7 +108,7 @@ class EventLoop : private NonCopyable {
     ChannelList activeChannels_;
     Channel*    currentActiveChannel_;
 
-    mutable MutexLock    mutex_;
+    mutable std::mutex   mutex_;
     std::vector<Functor> pendingFunctors_;    // @GuardedBy mutex_
 };
 }

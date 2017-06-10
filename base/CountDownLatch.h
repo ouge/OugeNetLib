@@ -3,38 +3,40 @@
 
 #include "base/Copyable.h"
 
+#include <mutex>
+#include <condition_variable>
+
 namespace ouge {
 
+//
 class CountDownLatch : NonCopyable {
   public:
     explicit CountDownLatch(int count)
-            : mutex_(), condition_(mutex_), count_(count) {}
+            : mutex_(), condition_(), count_(count) {}
 
     void wait() {
-        MutexLockGuard lock(mutex_);
-        while (count_ > 0) {
-            condition_.wait();
-        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        condition_.wait(lock, [this]() -> bool { return count_ <= 0; });
     }
 
     void countDown() {
-        MutexLockGuard lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         --count_;
         if (count_ == 0) {
-            condition_.notifyAll();
+            condition_.notify_all();
         }
-    } 
+    }
 
     int getCount() const {
-        MutexLockGuard lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         return count_;
     }
 
   private:
-    mutable MutexLock mutex_;
-    Condition         condition_;
-    int               count_;
+    mutable std::mutex          mutex_;
+    std::condition_variable_any condition_;
+    int                         count_;
 };
-}
+}    // namespace ouge
 
-#endif // BASE_COUNTDOWNLATCH_H
+#endif    // BASE_COUNTDOWNLATCH_H

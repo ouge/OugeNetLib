@@ -1,44 +1,45 @@
-#ifndef CURRENTTHREAD_H
-#define CURRENTTHREAD_H
+#ifndef BASE_CURRENTTHREAD_H
+#define BASE_CURRENTTHREAD_H
 
-#include <stdint.h>
+#include "base/Copyable.h"
 
-namespace ouge::CurrentThread {
+#include <cstdint>
 
-extern thread_local int         t_cachedTid;
-extern thread_local char        t_tidString[32];
-extern thread_local int         t_tidStringLength;
-extern thread_local const char* t_threadName;
+namespace ouge {
 
-void cacheTid();
+class CurrentThread : NonCopyable {
+  public:
+    CurrentThread() {}
 
-inline int
-tid() {
-    if (t_cachedTid == 0) {
-        cacheTid();
+    void cacheTid();
+    int  tid() {
+        if (cachedTid_ == 0) {
+            cacheTid();
+        }
+        return cachedTid_;
     }
-    return t_cachedTid;
-}
 
-inline const char*
-tidString() {
-    return t_tidString;
-}
+    const char* tidString() const { return tidString_; }
 
-inline int
-tidStringLength() {
-    return t_tidStringLength;
-}
+    int tidStringLength() const { return tidStringLength_; }
 
-inline const char*
-name() {
-    return t_threadName;
-}
+    const char* name() const { return threadName_; }
 
-bool isMainThread();
+    bool isMainThread() const;
 
-void sleepUsec(int64_t usec);
+    void sleepUsec(int64_t usec);
 
-}    // ouge::CurrentThread
+  private:
+    int         cachedTid_       = 0;
+    char        tidString_[32]   = {0};
+    int         tidStringLength_ = 6;
+    const char* threadName_      = "unknown";
+};
 
-#endif /* CURRENTTHREAD_H */
+extern thread_local CurrentThread t_currentThread;
+
+namespace detail {}
+
+}    // namespace ouge
+
+#endif /* BASE_CURRENTTHREAD_H */

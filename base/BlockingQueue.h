@@ -1,35 +1,36 @@
-#ifndef BLOCKINGQUEUE_H
-#define BLOCKINGQUEUE_H
+#ifndef BASE_BLOCKINGQUEUE_H
+#define BASE_BLOCKINGQUEUE_H
 
 #include "base/Copyable.h"
 
 #include <cassert>
 #include <queue>
+#include <condition_variable>
+#include <mutex>
 
 namespace ouge {
 
+// 以 stl::queue 作为为阻塞队列
 template <typename T>
 class BlockingQueue : NonCopyable {
   public:
-    BlockingQueue() : mutex_(), notEmpty_(mutex_), queue_() {}
+    BlockingQueue() : mutex_(), notEmpty_(), queue_() {}
 
     void put(const T& x) {
-        MutexLockGuard lock(mutex_);
-        queue_.push(std::move(x));
-        notEmpty_.notify();
+        std::unique_lock<std::mutex> lock(mutex_);
+        queue_.push(x);
+        notEmpty_.notify_one();
     }
 
     void put(T&& x) {
-        MutexLockGuard lock(mutex_);
+        std::unique_lock<std::mutex> lock(mutex_);
         queue_.push(std::move(x));
-        notEmpty_.notify();
+        notEmpty_.notify_one();
     }
 
     T take() {
-        MutexLockGuard lock(mutex_);
-        while (queue_.empty()) {
-            notEmpty_.wait();
-        }
+        std::unique_lock<std::mutex> lock(mutex_);
+        notEmpty_.wait(lock, !queue_.empty());
         assert(!queue_.empty());
         T front(std::move(queue_.front()));
         queue_.pop();
@@ -37,15 +38,15 @@ class BlockingQueue : NonCopyable {
     }
 
     size_t size() const {
-        MutexLockGuard lock(mutex_);
+        std::unique_lock<std::mutex> lock(mutex_);
         return queue_.size();
     }
 
   private:
-    mutable MutexLock mutex_;
-    Condition         notEmpty_;
-    std::queue<T>     queue_;
+    mutable std::mutex      mutex_;
+    std::condition_variable notEmpty_;
+    std::queue<T>           queue_;
 };
 }
 
-#endif /* BLOCKINGQUEUE_H */
+#endif    // BASE_BLOCKINGQUEUE_H

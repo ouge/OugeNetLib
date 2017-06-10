@@ -1,5 +1,5 @@
 {
-  "files.associations": {
+"files.associations": {
     "cctype": "cpp",
     "clocale": "cpp",
     "cmath": "cpp",
@@ -55,6 +55,8 @@
     "deque": "cpp",
     "fstream": "cpp",
     "valarray": "cpp",
-    "cinttypes": "cpp"
-  }
+    "cinttypes": "cpp",
+    "optional": "cpp",
+    "string_view": "cpp"
+}
 }

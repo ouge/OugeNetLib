@@ -1,5 +1,5 @@
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
+#ifndef BASE_THREADPOOL_H
+#define BASE_THREADPOOL_H
 
 #include "base/Thread.h"
 
@@ -46,4 +46,4 @@ class ThreadPool : NonCopyable {
 };
 }
 
-#endif /* THREADPOOL_H */
+#endif    // BASE_THREADPOOL_H

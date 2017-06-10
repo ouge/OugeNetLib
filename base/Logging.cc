@@ -1,4 +1,3 @@
-// TODO: see
 #include "base/Logging.h"
 #include "base/CurrentThread.h"
 #include "base/LogStream.h"
@@ -12,9 +11,9 @@
 
 namespace ouge {
 
-__thread char   t_errnobuf[512];
-__thread char   t_time[32];
-__thread time_t t_lastSecond;
+thread_local char   t_errnobuf[512];
+thread_local char   t_time[32];
+thread_local time_t t_lastSecond;
 
 const char*
 strerror_tl(int savedErrno) {

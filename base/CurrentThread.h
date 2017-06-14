@@ -6,40 +6,44 @@
 #include <cstdint>
 
 namespace ouge {
+namespace CurrentThread {
+// internal
+extern thread_local int         t_cachedTid;
+extern thread_local char        t_tidString[32];
+extern thread_local int         t_tidStringLength;
+extern thread_local const char* t_threadName;
 
-class CurrentThread : NonCopyable {
-  public:
-    CurrentThread() {}
+void cacheTid();
 
-    void cacheTid();
-    int  tid() {
-        if (cachedTid_ == 0) {
-            cacheTid();
-        }
-        return cachedTid_;
+inline int
+tid() {
+    if (__builtin_expect(t_cachedTid == 0, 0)) {
+        cacheTid();
     }
+    return t_cachedTid;
+}
 
-    const char* tidString() const { return tidString_; }
+inline const char*
+tidString()    // for logging
+{
+    return t_tidString;
+}
 
-    int tidStringLength() const { return tidStringLength_; }
+inline int
+tidStringLength()    // for logging
+{
+    return t_tidStringLength;
+}
 
-    const char* name() const { return threadName_; }
+inline const char*
+name() {
+    return t_threadName;
+}
 
-    bool isMainThread() const;
+bool isMainThread();
 
-    void sleepUsec(int64_t usec);
-
-  private:
-    int         cachedTid_       = 0;
-    char        tidString_[32]   = {0};
-    int         tidStringLength_ = 6;
-    const char* threadName_      = "unknown";
-};
-
-extern thread_local CurrentThread t_currentThread;
-
-namespace detail {}
-
+void sleepUsec(int64_t usec);
+}
 }    // namespace ouge
 
 #endif /* BASE_CURRENTTHREAD_H */

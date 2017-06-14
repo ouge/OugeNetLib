@@ -10,7 +10,7 @@
 
 namespace ouge {
 
-// 使用 boost 中的环形缓冲区作为阻塞队列怕；【77777
+// 使用 boost 中的环形缓冲区作为阻塞队列
 template <typename T>
 class BoundedBlockingQueue : NonCopyable {
   public:
@@ -33,7 +33,7 @@ class BoundedBlockingQueue : NonCopyable {
         notEmpty_.notify_one();
     }
 
-    T take() {
+    T take() const {
         std::unique_lock<std::mutex> lock(mutex_);
         notEmpty_.wait(lock, !queue_.empty());
         assert(!queue_.empty());

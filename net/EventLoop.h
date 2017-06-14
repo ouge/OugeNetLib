@@ -1,5 +1,5 @@
-#ifndef EVENTLOOP_H
-#define EVENTLOOP_H
+#ifndef BASE_EVENTLOOP_H
+#define BASE_EVENTLOOP_H
 
 #include "base/Copyable.h"
 #include "base/CurrentThread.h"
@@ -20,11 +20,8 @@ class TimerQueue;
 class TimerId;
 
 // 一个线程中最多只有一个EventLoop
-class EventLoop : private NonCopyable {
+class EventLoop : NonCopyable {
   public:
-    using Functor = std::function<void()>;
-
-    //
     EventLoop();
     ~EventLoop();
 
@@ -46,20 +43,22 @@ class EventLoop : private NonCopyable {
 
     int64_t iteration() const { return iteration_; }
 
+    using Functor = std::function<void()>;
+
     /// Runs callback immediately in the loop thread.
     /// It wakes up the loo-, and run the cb.
     /// If in the same loop thread, cb is run within the function.
     /// Safe to call from other threads.
     void runInLoop(const Functor& cb);
+    void runInLoop(Functor&& cb);
+
     /// Queues callback in the loop thread.
     /// Runs after finish pooling.
     /// Safe to call from other threads.
     void queueInLoop(const Functor& cb);
+    void queueInLoop(Functor&& cb);
 
     size_t queueSize() const;
-
-    void runInLoop(Functor&& cb);
-    void queueInLoop(Functor&& cb);
 
     TimerId runAt(const Timestamp& time, const TimerCallback& cb);
     TimerId runAfter(double delay, const TimerCallback& cb);
@@ -82,10 +81,7 @@ class EventLoop : private NonCopyable {
     void abortNotInLoopThread();
     void handleRead();
     void doPendingFunctors();
-
     void printActiveChannels() const;
-
-    using ChannelList = std::vector<Channel*>;
 
     bool looping_;
     bool quit_;
@@ -98,18 +94,21 @@ class EventLoop : private NonCopyable {
 
     std::unique_ptr<Poller>     poller_;        //
     std::unique_ptr<TimerQueue> timerQueue_;    //
-    int                         wakeupFd_;
+
     // unlike in TimerQueue, which is an internal class,
     // we don't expose Channel to client.
     std::unique_ptr<Channel> wakeupChannel_;
-    boost::any               context_;
+    int                      wakeupFd_;
 
     // scratch variables
+    using ChannelList = std::vector<Channel*>;
     ChannelList activeChannels_;
     Channel*    currentActiveChannel_;
 
     mutable std::mutex   mutex_;
     std::vector<Functor> pendingFunctors_;    // @GuardedBy mutex_
+
+    boost::any context_;
 };
 }
 

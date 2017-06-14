@@ -10,6 +10,11 @@ Exception::Exception(const std::string& msg) : message_(msg) {
     fillStackTrace();
 }
 
+Exception::Exception(std::string&& msg) : message_(msg) {
+    fillStackTrace();
+}
+
+
 Exception::~Exception() throw() {}
 
 const char*

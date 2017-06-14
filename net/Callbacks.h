@@ -21,8 +21,9 @@ namespace net {
 class Buffer;
 class TcpConnection;
 
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+
 // 暴露给用户的回调函数接口
-using TcpConnectionPtr      = std::shared_ptr<TcpConnection>;
 using TimerCallback         = std::function<void()>;
 using ConnectionCallback    = std::function<void(const TcpConnectionPtr&)>;
 using CloseCallback         = std::function<void(const TcpConnectionPtr&)>;
@@ -36,7 +37,7 @@ void defaultConnectionCallback(const TcpConnectionPtr& conn);
 void defaultMessageCallback(const TcpConnectionPtr& conn,
                             Buffer*                 buffer,
                             Timestamp               receiveTime);
-}
-}
+}    // namespace ouge::net
+}    // namespace ouge
 
-#endif    // MUDUO_NET_CALLBACKS_H
+#endif    // NET_CALLBACKS_H

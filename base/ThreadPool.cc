@@ -2,8 +2,8 @@
 
 #include "base/Exception.h"
 
-#include <assert.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
 #include <functional>
 
 using namespace ouge;
@@ -30,8 +30,7 @@ ThreadPool::start(int numThreads) {
     for (int i = 0; i < numThreads; ++i) {
         char id[32];
         snprintf(id, sizeof id, "%d", i + 1);
-        threads_.push_back(new Thread(std::bind(&ThreadPool::runInThread, this),
-                                      name_ + id));
+        threads_.push_back(new Thread([this]() { runInThread(); }, name_ + id));
         threads_[i].start();
     }
     if (numThreads == 0 && threadInitCallback_) {
@@ -88,9 +87,7 @@ ThreadPool::run(Task&& task) {
 ThreadPool::Task
 ThreadPool::take() {
     std::unique_lock<std::mutex> lock(mutex_);
-
     notEmpty_.wait(lock, !queue_.empty() || !running_);
-
     Task task;
     if (!queue_.empty()) {
         task = queue_.front();
@@ -114,7 +111,7 @@ ThreadPool::runInThread() {
             threadInitCallback_();
         }
         while (running_) {
-            Task task(take());
+            Task task(move(take()));
             if (task) {
                 task();
             }

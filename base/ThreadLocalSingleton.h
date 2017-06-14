@@ -28,9 +28,10 @@ class ThreadLocalSingleton : NonCopyable {
     ThreadLocalSingleton();
     ~ThreadLocalSingleton();
 
-    // 释放线程局部变量的空间
+    // 释放线程局部变量的空间，每当线程退出时，会自动将
     static void destructor(void* obj) {
         assert(obj == t_value_);
+        // TODO: 啥意思
         using T_must_be_complete_type = char[sizeof(T) == 0 ? -1 : 1];
         T_must_be_complete_type dummy;
         (void)dummy;
@@ -40,8 +41,8 @@ class ThreadLocalSingleton : NonCopyable {
 
     class Deleter {
       public:
+        // 在程序运行中只会调用一次构造函数（多线程环境下）
         Deleter() {
-            // 创建一个键
             // 线程正常退出时，会调用 ThreadLocalSingleton::destructor(t_value_)
             ::pthread_key_create(&pkey_, &ThreadLocalSingleton::destructor);
         }
@@ -57,8 +58,7 @@ class ThreadLocalSingleton : NonCopyable {
         pthread_key_t pkey_;
     };
 
-    // 线程局部变量
-    static thread_local T* t_value_;
+    static thread_local T* t_value_;    // 线程局部变量
     static Deleter         deleter_;
 };
 
@@ -69,6 +69,6 @@ thread_local T* ThreadLocalSingleton<T>::t_value_ = nullptr;
 // 嵌套依赖类型 ThreadLocalSingleton<T>::Deleter 前面需要加上 typename
 template <typename T>
 typename ThreadLocalSingleton<T>::Deleter ThreadLocalSingleton<T>::deleter_;
-}
+}    // namespace ouge
 
 #endif

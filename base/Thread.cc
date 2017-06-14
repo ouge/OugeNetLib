@@ -2,12 +2,11 @@
 #include "base/Thread.h"
 #include "base/CurrentThread.h"
 #include "base/Exception.h"
-#include "base/Logging.h"
 #include "base/Timestamp.h"
 
 #include <sys/prctl.h>
 #include <sys/syscall.h>
-
+#include <iostream>
 #include <type_traits>
 #include <memory>
 
@@ -15,16 +14,49 @@ using namespace std;
 
 namespace ouge {
 
+namespace CurrentThread {
+
+thread_local int         t_cachedTid       = 0;
+thread_local char        t_tidString[32]   = {0};
+thread_local int         t_tidStringLength = 6;
+thread_local const char* t_threadName      = "unknown";
+
+static_assert(is_same_v<int, pid_t>);
+}
 
 namespace detail {
 
+pid_t
+gettid() {
+    return static_cast<pid_t>(::syscall(SYS_gettid));
+}
 
+void
+afterFork() {
+    ouge::CurrentThread::t_cachedTid  = 0;
+    ouge::CurrentThread::t_threadName = "main";
+    CurrentThread::tid();
+}
 
+class ThreadNameInitializer {
+  public:
+    ThreadNameInitializer() {
+        ouge::CurrentThread::t_threadName = "main";
+        CurrentThread::tid();
+        // fork后，子进程的main线程会执行afterFork。
+        pthread_atfork(NULL, NULL, &afterFork);
+    }
+};
+
+// 只有主线程会创建init
+ThreadNameInitializer init;
+
+// 线程数据，封装了线程主函数、线程名和tid
 struct ThreadData {
-    typedef ouge::Thread::ThreadFunc ThreadFunc;
-    ThreadFunc                       func_;
-    string                           name_;
-    weak_ptr<pid_t>                  wkTid_;
+    using ThreadFunc = ouge::Thread::ThreadFunc;
+    ThreadFunc      func_;
+    string          name_;
+    weak_ptr<pid_t> wkTid_;
 
     ThreadData(const ThreadFunc&        func,
                const string&            name,
@@ -42,7 +74,10 @@ struct ThreadData {
 
         ouge::CurrentThread::t_threadName =
                 name_.empty() ? "ougeThread" : name_.c_str();
+
+        // 设置线程名
         ::prctl(PR_SET_NAME, ouge::CurrentThread::t_threadName);
+
         try {
             func_();
             ouge::CurrentThread::t_threadName = "finished";
@@ -77,7 +112,32 @@ startThread(void* obj) {
 }    // namespace ouge::detail
 }    // namespace ouge
 
-std::atomic<int> Thread::numCreated_;
+using namespace ouge;
+
+void
+CurrentThread::cacheTid() {
+    if (t_cachedTid == 0) {
+        t_cachedTid = detail::gettid();
+        t_tidStringLength =
+                snprintf(t_tidString, sizeof t_tidString, "%5d ", t_cachedTid);
+    }
+}
+
+bool
+CurrentThread::isMainThread() {
+    return tid() == ::getpid();
+}
+
+void
+CurrentThread::sleepUsec(int64_t usec) {
+    struct timespec ts = {0, 0};
+    ts.tv_sec = static_cast<time_t>(usec / Timestamp::kMicroSecondsPerSecond);
+    ts.tv_nsec =
+            static_cast<long>(usec % Timestamp::kMicroSecondsPerSecond * 1000);
+    ::nanosleep(&ts, NULL);
+}
+
+atomic_int32_t Thread::numCreated_;
 
 Thread::Thread(const ThreadFunc& func, const string& n)
         : started_(false),
@@ -124,7 +184,7 @@ Thread::start() {
     if (pthread_create(&pthreadId_, NULL, &detail::startThread, data)) {
         started_ = false;
         delete data;    // or no delete?
-        LOG_SYSFATAL << "Failed in pthread_create";
+        cerr << "Failed in pthread_create";
     }
 }
 

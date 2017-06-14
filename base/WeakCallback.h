@@ -3,14 +3,12 @@
 
 #include <functional>
 #include <memory>
+#include <iostream>
 
 namespace ouge {
 
-// A barely usable WeakCallback
-
-// FIXME: support std::shared_ptr as well, maybe using template template
-// parameters
-
+// 弱回调仿函数，针对参数为weak_ptr的实际回调函数的封装。
+// 会先对weak_ptr判断对象是否存在。
 template <typename CLASS, typename... ARGS>
 class WeakCallback {
   public:
@@ -18,17 +16,15 @@ class WeakCallback {
                  const std::function<void(CLASS*, ARGS...)>& function)
             : object_(object), function_(function) {}
 
-    // Default dtor, copy ctor and assignment are okay
-
     void operator()(ARGS&&... args) const {
         std::shared_ptr<CLASS> ptr(object_.lock());
+
         if (ptr) {
+            // 如果weak_ptr的lock操作成功，说明对象生存，执行回调
             function_(ptr.get(), std::forward<ARGS>(args)...);
+        } else {
+            std::cerr << "expired" << std::endl;
         }
-        // else
-        // {
-        //   LOG_TRACE << "expired";
-        // }
     }
 
   private:
@@ -49,6 +45,6 @@ makeWeakCallback(const std::shared_ptr<CLASS>& object,
                  void (CLASS::*function)(ARGS...) const) {
     return WeakCallback<CLASS, ARGS...>(object, function);
 }
-}
+}    // namespace ouge
 
-#endif
+#endif    // BASE_WEAKCALLBACK_H

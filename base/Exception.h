@@ -1,5 +1,5 @@
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
+#ifndef BASE_EXCEPTION_H
+#define BASE_EXCEPTION_H
 
 #include <exception>
 #include <string>
@@ -10,6 +10,7 @@ class Exception : public std::exception {
   public:
     explicit Exception(const char* what);
     explicit Exception(const std::string& what);
+    explicit Exception(std::string&& what);
     virtual ~Exception() throw();
     virtual const char* what() const throw();
     const char*         stackTrace() const throw();
@@ -18,8 +19,8 @@ class Exception : public std::exception {
     void fillStackTrace();
 
     std::string message_;
-    std::string stack_;
+    std::string stack_; 
 };
 }
 
-#endif /* EXCEPTION_H */
+#endif /* BASE_EXCEPTION_H */

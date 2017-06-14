@@ -1,6 +1,5 @@
 #include "net/Channel.h"
 
-#include "base/Logging.h"
 #include "net/EventLoop.h"
 
 #include <sstream>

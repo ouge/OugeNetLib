@@ -8,7 +8,7 @@
 
 namespace ouge {
 
-//
+// 
 class CountDownLatch : NonCopyable {
   public:
     explicit CountDownLatch(int count)

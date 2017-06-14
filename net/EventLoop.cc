@@ -1,22 +1,19 @@
 #include "net/EventLoop.h"
 #include "base/CurrentThread.h"
-#include "base/Logging.h"
 #include "net/Channel.h"
 #include "net/Poller.h"
 #include "net/SocketsOps.h"
 #include "net/TimerQueue.h"
 #include "net/TimerId.h"
 
-#include <assert.h>
+#include <cassert>
+#include <iostream>
 #include <signal.h>
 #include <sys/eventfd.h>
 #include <functional>
 
-using namespace ouge;
-using namespace ouge::net;
-
 namespace {
-__thread EventLoop* t_loopInThisThread = 0;
+thread_local ouge::net::EventLoop* t_loopInThisThread = 0;
 
 const int kPollTimeMs = 10000;
 
@@ -24,7 +21,7 @@ int
 createEventfd() {
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0) {
-        LOG_SYSERR << "Failed in eventfd";
+        std::cerr << "Failed in eventfd\n";
         abort();
     }
     return evtfd;
@@ -33,15 +30,15 @@ createEventfd() {
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 class IgnoreSigPipe {
   public:
-    IgnoreSigPipe() {
-        ::signal(SIGPIPE, SIG_IGN);
-        // LOG_TRACE << "Ignore SIGPIPE";
-    }
-};
+    IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
+};    // local namespace
 #pragma GCC diagnostic error "-Wold-style-cast"
 
 IgnoreSigPipe initObj;
 }    // local namespace
+
+using namespace ouge;
+using namespace ouge::net;
 
 EventLoop*
 EventLoop::getEventLoopOfCurrentThread() {
@@ -60,19 +57,20 @@ EventLoop::EventLoop()
           wakeupFd_(createEventfd()),
           wakeupChannel_(new Channel(this, wakeupFd_)),
           currentActiveChannel_(NULL) {
-    LOG_DEBUG << "EventLoop created " << this << " in thread " << threadId_;
+    std::cout << "EventLoop created " << this << " in thread " << threadId_;
     if (t_loopInThisThread) {
-        LOG_FATAL << "Another EventLoop " << t_loopInThisThread
+        std::cerr << "Another EventLoop " << t_loopInThisThread
                   << " exists in this thread " << threadId_;
     } else {
         t_loopInThisThread = this;
     }
-    wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
+    // wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
+    wakeupChannel_->setReadCallback([this](Timestamp) { handleRead(); });
     wakeupChannel_->enableReading();
 }
 
 EventLoop::~EventLoop() {
-    LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_
+    std::cout << "EventLoop " << this << " of thread " << threadId_
               << " destructs in thread " << CurrentThread::tid();
     wakeupChannel_->disableAll();
     wakeupChannel_->remove();
@@ -86,15 +84,13 @@ EventLoop::loop() {
     assertInLoopThread();
     looping_ = true;
     quit_    = false;
-    LOG_TRACE << "EventLoop " << this << " start looping";
+    std::cout << "EventLoop " << this << " start looping";
 
     while (!quit_) {
         activeChannels_.clear();
         pollReturnTime_ = poller_->poll(kPollTimeMs, &activeChannels_);
         ++iteration_;
-        if (Logger::logLevel() <= Logger::TRACE) {
-            printActiveChannels();
-        }
+        // printActiveChannels();
         eventHandling_ = true;
         for (ChannelList::iterator it = activeChannels_.begin();
              it != activeChannels_.end();
@@ -107,7 +103,7 @@ EventLoop::loop() {
         doPendingFunctors();
     }
 
-    LOG_TRACE << "EventLoop " << this << " stop looping";
+    std::cout << "EventLoop " << this << " stop looping";
     looping_ = false;
 }
 
@@ -130,12 +126,32 @@ EventLoop::runInLoop(const Functor& cb) {
         queueInLoop(cb);
     }
 }
+void
+EventLoop::runInLoop(Functor&& cb) {
+    if (isInLoopThread()) {
+        cb();
+    } else {
+        queueInLoop(std::move(cb));
+    }
+}
 
 void
 EventLoop::queueInLoop(const Functor& cb) {
     {
         std::lock_guard<std::mutex> lock(mutex_);
         pendingFunctors_.push_back(cb);
+    }
+
+    if (!isInLoopThread() || callingPendingFunctors_) {
+        wakeup();
+    }
+}
+
+void
+EventLoop::queueInLoop(Functor&& cb) {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        pendingFunctors_.push_back(std::move(cb));    // emplace_back
     }
 
     if (!isInLoopThread() || callingPendingFunctors_) {
@@ -164,28 +180,6 @@ TimerId
 EventLoop::runEvery(double interval, const TimerCallback& cb) {
     Timestamp time(addTime(Timestamp::now(), interval));
     return timerQueue_->addTimer(cb, time, interval);
-}
-
-// FIXME: remove duplication
-void
-EventLoop::runInLoop(Functor&& cb) {
-    if (isInLoopThread()) {
-        cb();
-    } else {
-        queueInLoop(std::move(cb));
-    }
-}
-
-void
-EventLoop::queueInLoop(Functor&& cb) {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        pendingFunctors_.push_back(std::move(cb));    // emplace_back
-    }
-
-    if (!isInLoopThread() || callingPendingFunctors_) {
-        wakeup();
-    }
 }
 
 TimerId
@@ -240,7 +234,7 @@ EventLoop::hasChannel(Channel* channel) {
 
 void
 EventLoop::abortNotInLoopThread() {
-    LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
+    std::cerr << "EventLoop::abortNotInLoopThread - EventLoop " << this
               << " was created in threadId_ = " << threadId_
               << ", current thread id = " << CurrentThread::tid();
 }
@@ -250,7 +244,7 @@ EventLoop::wakeup() {
     uint64_t one = 1;
     ssize_t  n   = sockets::write(wakeupFd_, &one, sizeof one);
     if (n != sizeof one) {
-        LOG_ERROR << "EventLoop::wakeup() writes " << n
+        std::cerr << "EventLoop::wakeup() writes " << n
                   << " bytes instead of 8";
     }
 }
@@ -260,7 +254,7 @@ EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t  n   = sockets::read(wakeupFd_, &one, sizeof one);
     if (n != sizeof one) {
-        LOG_ERROR << "EventLoop::handleRead() reads " << n
+        std::cerr << "EventLoop::handleRead() reads " << n
                   << " bytes instead of 8";
     }
 }
@@ -287,6 +281,6 @@ EventLoop::printActiveChannels() const {
          it != activeChannels_.end();
          ++it) {
         const Channel* ch = *it;
-        LOG_TRACE << "{" << ch->reventsToString() << "} ";
+        std::cout << "{" << ch->reventsToString() << "} ";
     }
 }

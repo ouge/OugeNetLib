@@ -27,11 +27,13 @@ createEventfd() {
     return evtfd;
 }
 
+// SIG_IGN 使用了旧式的类型转换
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+// 忽略SigPipe信号
 class IgnoreSigPipe {
   public:
     IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
-};    // local namespace
+};
 #pragma GCC diagnostic error "-Wold-style-cast"
 
 IgnoreSigPipe initObj;
@@ -64,8 +66,7 @@ EventLoop::EventLoop()
     } else {
         t_loopInThisThread = this;
     }
-    // wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
-    wakeupChannel_->setReadCallback([this](Timestamp) { handleRead(); });
+    wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
     wakeupChannel_->enableReading();
 }
 
@@ -107,6 +108,7 @@ EventLoop::loop() {
     looping_ = false;
 }
 
+// 从loop中退出
 void
 EventLoop::quit() {
     quit_ = true;

@@ -95,10 +95,8 @@ class EventLoop : NonCopyable {
     std::unique_ptr<Poller>     poller_;        //
     std::unique_ptr<TimerQueue> timerQueue_;    //
 
-    // unlike in TimerQueue, which is an internal class,
-    // we don't expose Channel to client.
-    std::unique_ptr<Channel> wakeupChannel_;
     int                      wakeupFd_;
+    std::unique_ptr<Channel> wakeupChannel_;
 
     // scratch variables
     using ChannelList = std::vector<Channel*>;

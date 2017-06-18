@@ -1,6 +1,5 @@
 #include "net/Acceptor.h"
 
-#include "base/Logging.h"
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
 #include "net/SocketsOps.h"
@@ -13,9 +12,8 @@
 using namespace ouge;
 using namespace ouge::net;
 
-Acceptor::Acceptor(EventLoop*         loop,
-                   const InetAddress& listenAddr,
-                   bool               reuseport)
+Acceptor::Acceptor(EventLoop* loop const InetAddress& listenAddr,
+                   bool                               reuseport)
         : loop_(loop),
           acceptSocket_(sockets::createNonblockingOrDie(listenAddr.family())),
           acceptChannel_(loop, acceptSocket_.fd()),

@@ -1,6 +1,5 @@
 #include "net/Socket.h"
 
-#include "base/Logging.h"
 #include "net/InetAddress.h"
 #include "net/SocketsOps.h"
 
@@ -84,7 +83,6 @@ Socket::setTcpNoDelay(bool on) {
                  TCP_NODELAY,
                  &optval,
                  static_cast<socklen_t>(sizeof optval));
-    // FIXME: CHECK
 }
 
 void
@@ -107,7 +105,7 @@ Socket::setReusePort(bool on) {
                            &optval,
                            static_cast<socklen_t>(sizeof optval));
     if (ret < 0 && on) {
-        LOG_SYSERR << "SO_REUSEPORT failed.";
+        cerr << "SO_REUSEPORT failed.";
     }
 }
 

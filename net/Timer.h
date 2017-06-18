@@ -10,9 +10,7 @@
 namespace ouge {
 namespace net {
 
-///
-/// Internal class for timer event.
-///
+// Internal class for timer event.
 class Timer : NonCopyable {
   public:
     Timer(const TimerCallback& cb, Timestamp when, double interval)
@@ -46,8 +44,8 @@ class Timer : NonCopyable {
     const bool          repeat_;
     const int64_t       sequence_;
 
-    static std::atomic<int64_t> s_numCreated_;
+    static std::atomic_int64_t s_numCreated_;
 };
-}
-}
-#endif    // MUDUO_NET_TIMER_H
+}    // namespace ouge::net
+}    // namespace ouge
+#endif

@@ -1,33 +1,24 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
+#ifndef NET_CONNECTOR_H
+#define NET_CONNECTOR_H
 
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is an internal header file, you should not include this.
+#include "net/InetAddress.h"
 
-#ifndef MUDUO_NET_CONNECTOR_H
-#define MUDUO_NET_CONNECTOR_H
+#include "base/Copyable.h"
 
-#include <muduo/net/InetAddress.h>
-
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
+#include <memory>
+#include <functional>
 #include <boost/scoped_ptr.hpp>
 
-namespace muduo {
+namespace ouge {
 namespace net {
 
 class Channel;
 class EventLoop;
 
-class Connector : boost::noncopyable,
-                  public boost::enable_shared_from_this<Connector> {
+class Connector : private NonCopyable,
+                  public std::enable_shared_from_this<Connector> {
   public:
-    typedef boost::function<void(int sockfd)> NewConnectionCallback;
+    using NewConnectionCallback = std::function<void(int sockfd)>;
 
     Connector(EventLoop* loop, const InetAddress& serverAddr);
     ~Connector();
@@ -48,12 +39,16 @@ class Connector : boost::noncopyable,
     static const int kInitRetryDelayMs = 500;
 
     void setState(States s) { state_ = s; }
-    void                 startInLoop();
-    void                 stopInLoop();
-    void                 connect();
+
+    void startInLoop();
+    void stopInLoop();
+
+    void connect();
     void connecting(int sockfd);
+
     void handleWrite();
     void handleError();
+
     void retry(int sockfd);
     int  removeAndResetChannel();
     void resetChannel();
@@ -66,7 +61,7 @@ class Connector : boost::noncopyable,
     NewConnectionCallback      newConnectionCallback_;
     int                        retryDelayMs_;
 };
-}
-}
+}    // namespace ouge::net
+}    // namespace ouge
 
-#endif    // MUDUO_NET_CONNECTOR_H
+#endif

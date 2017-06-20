@@ -5,15 +5,16 @@
 #include "net/SocketsOps.h"
 
 #include <functional>
-
 #include <cerrno>
+#include <iostream>
+#include <cassert>
 #include <fcntl.h>
 
 using namespace ouge;
 using namespace ouge::net;
 
-Acceptor::Acceptor(EventLoop* loop const InetAddress& listenAddr,
-                   bool                               reuseport)
+Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr,
+                   bool reuseport)
         : loop_(loop),
           acceptSocket_(sockets::createNonblockingOrDie(listenAddr.family())),
           acceptChannel_(loop, acceptSocket_.fd()),
@@ -32,30 +33,26 @@ Acceptor::~Acceptor() {
     ::close(idleFd_);
 }
 
-void
-Acceptor::listen() {
+void Acceptor::listen() {
     loop_->assertInLoopThread();
     listenning_ = true;
     acceptSocket_.listen();
     acceptChannel_.enableReading();
 }
 
-void
-Acceptor::handleRead() {
+void Acceptor::handleRead() {
     loop_->assertInLoopThread();
     InetAddress peerAddr;
     // FIXME: loop until no more
     int connfd = acceptSocket_.accept(&peerAddr);
     if (connfd >= 0) {
-        // string hostport = peerAddr.toIpPort();
-        // LOG_TRACE << "Accepts of " << hostport;
         if (newConnectionCallback_) {
             newConnectionCallback_(connfd, peerAddr);
         } else {
             sockets::close(connfd);
         }
     } else {
-        LOG_SYSERR << "in Acceptor::handleRead";
+        std::cerr << "in Acceptor::handleRead";
         // Read the section named "The special problem of
         // accept()ing when you can't" in libev's doc.
         // By Marc Lehmann, author of libev.

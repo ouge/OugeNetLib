@@ -1,25 +1,16 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is a public header file, it must only include public header files.
-
-#ifndef MUDUO_NET_TCPSERVER_H
-#define MUDUO_NET_TCPSERVER_H
+#ifndef NET_TCPSERVER_H
+#define NET_TCPSERVER_H
 
 #include "base/Types.h"
 #include "net/TcpConnection.h"
 
 #include "base/Copyable.h"
+
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
 #include <map>
 #include <atomic>
+#include <memory>
+#include <functional>
 
 namespace ouge {
 namespace net {
@@ -34,17 +25,16 @@ class EventLoopThreadPool;
 /// This is an interface class, so don't expose too much details.
 class TcpServer : NonCopyable {
   public:
-    using ThreadInitCallback = boost::function<void(EventLoop*)>;
+    using ThreadInitCallback = std::function<void(EventLoop*)>;
+
     enum Option {
         kNoReusePort,
         kReusePort,
     };
 
     // TcpServer(EventLoop* loop, const InetAddress& listenAddr);
-    TcpServer(EventLoop*         loop,
-              const InetAddress& listenAddr,
-              const std::string& nameArg,
-              Option             option = kNoReusePort);
+    TcpServer(EventLoop* loop, const InetAddress& listenAddr,
+              const std::string& nameArg, Option option = kNoReusePort);
     ~TcpServer();    // force out-line dtor, for scoped_ptr members.
 
     const std::string& ipPort() const { return ipPort_; }
@@ -66,7 +56,7 @@ class TcpServer : NonCopyable {
         threadInitCallback_ = cb;
     }
     /// valid after calling start()
-    boost::shared_ptr<EventLoopThreadPool> threadPool() { return threadPool_; }
+    std::shared_ptr<EventLoopThreadPool> threadPool() { return threadPool_; }
 
     /// Starts the server if it's not listenning.
     ///
@@ -102,20 +92,20 @@ class TcpServer : NonCopyable {
     /// Not thread safe, but in loop
     void removeConnectionInLoop(const TcpConnectionPtr& conn);
 
-    typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
-
     EventLoop*                  loop_;    // the acceptor loop
     const std::string           ipPort_;
     const std::string           name_;
     boost::scoped_ptr<Acceptor> acceptor_;    // avoid revealing Acceptor
-    boost::shared_ptr<EventLoopThreadPool> threadPool_;
-    ConnectionCallback                     connectionCallback_;
-    MessageCallback                        messageCallback_;
-    WriteCompleteCallback                  writeCompleteCallback_;
-    ThreadInitCallback                     threadInitCallback_;
-    std::atomic<uint32_t>                  started_;
+    std::shared_ptr<EventLoopThreadPool> threadPool_;
+    ConnectionCallback                   connectionCallback_;
+    MessageCallback                      messageCallback_;
+    WriteCompleteCallback                writeCompleteCallback_;
+    ThreadInitCallback                   threadInitCallback_;
+    std::atomic_uint32_t                 started_;
     // always in loop thread
-    int           nextConnId_;
+    int nextConnId_;
+
+    using ConnectionMap = std::map<std::string, TcpConnectionPtr>;
     ConnectionMap connections_;
 };
 }

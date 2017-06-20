@@ -1,5 +1,5 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef NET_BUFFER_H
+#define NET_BUFFER_H
 
 #include "base/StringPiece.h"
 #include "base/Copyable.h"
@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <cstring>
 
@@ -131,9 +131,7 @@ class Buffer : public Copyable {
     }
 
     void ensureWritableBytes(size_t len) {
-        if (writableBytes() < len) {
-            makeSpace(len);
-        }
+        if (writableBytes() < len) { makeSpace(len); }
         assert(writableBytes() >= len);
     }
 
@@ -184,9 +182,7 @@ class Buffer : public Copyable {
         return result;
     }
 
-    ///
     /// Read int32_t from network endian
-    ///
     /// Require: buf->readableBytes() >= sizeof(int32_t)
     int32_t readInt32() {
         int32_t result = peekInt32();
@@ -206,10 +202,8 @@ class Buffer : public Copyable {
         return result;
     }
 
-    ///
-    /// Peek int64_t from network endian
-    ///
-    /// Require: buf->readableBytes() >= sizeof(int64_t)
+    // Peek int64_t from network endian
+    // Require: buf->readableBytes() >= sizeof(int64_t)
     int64_t peekInt64() const {
         assert(readableBytes() >= sizeof(int64_t));
         int64_t be64 = 0;
@@ -217,10 +211,8 @@ class Buffer : public Copyable {
         return sockets::networkToHost64(be64);
     }
 
-    ///
-    /// Peek int32_t from network endian
-    ///
-    /// Require: buf->readableBytes() >= sizeof(int32_t)
+    // Peek int32_t from network endian
+    // Require: buf->readableBytes() >= sizeof(int32_t)
     int32_t peekInt32() const {
         assert(readableBytes() >= sizeof(int32_t));
         int32_t be32 = 0;
@@ -241,17 +233,13 @@ class Buffer : public Copyable {
         return x;
     }
 
-    ///
-    /// Prepend int64_t using network endian
-    ///
+    // Prepend int64_t using network endian
     void prependInt64(int64_t x) {
         int64_t be64 = sockets::hostToNetwork64(x);
         prepend(&be64, sizeof be64);
     }
 
-    ///
-    /// Prepend int32_t using network endian
-    ///
+    // Prepend int32_t using network endian
     void prependInt32(int32_t x) {
         int32_t be32 = sockets::hostToNetwork32(x);
         prepend(&be32, sizeof be32);
@@ -282,7 +270,6 @@ class Buffer : public Copyable {
     size_t internalCapacity() const { return buffer_.capacity(); }
 
     /// Read data directly into buffer.
-    ///
     /// It may implement with readv(2)
     /// @return result of read(2), @c errno is saved
     ssize_t readFd(int fd, int* savedErrno);
@@ -300,8 +287,7 @@ class Buffer : public Copyable {
             // move readable data to the front, make space inside buffer
             assert(kCheapPrepend < readerIndex_);
             size_t readable = readableBytes();
-            std::copy(begin() + readerIndex_,
-                      begin() + writerIndex_,
+            std::copy(begin() + readerIndex_, begin() + writerIndex_,
                       begin() + kCheapPrepend);
             readerIndex_ = kCheapPrepend;
             writerIndex_ = readerIndex_ + readable;

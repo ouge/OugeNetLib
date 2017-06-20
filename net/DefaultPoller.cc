@@ -6,8 +6,7 @@
 
 using namespace ouge::net;
 
-Poller*
-Poller::newDefaultPoller(EventLoop* loop) {
+Poller* Poller::newDefaultPoller(EventLoop* loop) {
     if (::getenv("OUGE_USE_POLL")) {
         return new PollPoller(loop);
     } else {

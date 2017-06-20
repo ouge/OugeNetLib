@@ -1,11 +1,10 @@
 #include "net/EPollPoller.h"
 
-#include "base/Logging.h"
 #include "net/Channel.h"
 
-#include <assert.h>
-#include <errno.h>
-
+#include <cassert>
+#include <cerrno>
+#include <iostream>
 #include <sys/epoll.h>
 
 using namespace ouge;
@@ -21,42 +20,36 @@ EPollPoller::EPollPoller(EventLoop* loop)
         : Poller(loop),
           epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
           events_(kInitEventListSize) {
-    if (epollfd_ < 0) {
-        LOG_SYSFATAL << "EPollPoller::EPollPoller";
-    }
+    if (epollfd_ < 0) { std::cerr << "EPollPoller::EPollPoller"; }
 }
 
 EPollPoller::~EPollPoller() { ::close(epollfd_); }
 
-Timestamp
-EPollPoller::poll(int timeoutMs, ChannelList* activeChannels) {
-    LOG_TRACE << "fd total count " << channels_.size();
-    int numEvents = ::epoll_wait(epollfd_,
-                                 &*events_.begin(),
-                                 static_cast<int>(events_.size()),
-                                 timeoutMs);
+Timestamp EPollPoller::poll(int timeoutMs, ChannelList* activeChannels) {
+    std::cout << "fd total count " << channels_.size();
+    int numEvents = ::epoll_wait(epollfd_, &*events_.begin(),
+                                 static_cast<int>(events_.size()), timeoutMs);
     int       savedErrno = errno;
     Timestamp now(Timestamp::now());
     if (numEvents > 0) {
-        LOG_TRACE << numEvents << " events happended";
+        std::cout << numEvents << " events happended";
         fillActiveChannels(numEvents, activeChannels);
         if (implicit_cast<size_t>(numEvents) == events_.size()) {
             events_.resize(events_.size() * 2);
         }
     } else if (numEvents == 0) {
-        LOG_TRACE << "nothing happended";
+        std::cout << "nothing happended";
     } else {
         if (savedErrno != EINTR) {
             errno = savedErrno;
-            LOG_SYSERR << "EPollPoller::poll()";
+            std::cout << "EPollPoller::poll()";
         }
     }
     return now;
 }
 
-void
-EPollPoller::fillActiveChannels(int          numEvents,
-                                ChannelList* activeChannels) const {
+void EPollPoller::fillActiveChannels(int          numEvents,
+                                     ChannelList* activeChannels) const {
     assert(implicit_cast<size_t>(numEvents) <= events_.size());
     for (int i = 0; i < numEvents; ++i) {
         Channel* channel = static_cast<Channel*>(events_[i].data.ptr);
@@ -71,11 +64,10 @@ EPollPoller::fillActiveChannels(int          numEvents,
     }
 }
 
-void
-EPollPoller::updateChannel(Channel* channel) {
+void EPollPoller::updateChannel(Channel* channel) {
     Poller::assertInLoopThread();
     const int index = channel->index();
-    LOG_TRACE << "fd = " << channel->fd() << " events = " << channel->events()
+    std::cout << "fd = " << channel->fd() << " events = " << channel->events()
               << " index = " << index;
     if (index == kNew || index == kDeleted) {
         // a new one, add with EPOLL_CTL_ADD
@@ -107,11 +99,10 @@ EPollPoller::updateChannel(Channel* channel) {
     }
 }
 
-void
-EPollPoller::removeChannel(Channel* channel) {
+void EPollPoller::removeChannel(Channel* channel) {
     Poller::assertInLoopThread();
     int fd = channel->fd();
-    LOG_TRACE << "fd = " << fd;
+    std::cout << "fd = " << fd;
     assert(channels_.find(fd) != channels_.end());
     assert(channels_[fd] == channel);
     assert(channel->isNoneEvent());
@@ -120,44 +111,35 @@ EPollPoller::removeChannel(Channel* channel) {
     size_t n = channels_.erase(fd);
     (void)n;
     assert(n == 1);
-    if (index == kAdded) {
-        update(EPOLL_CTL_DEL, channel);
-    }
+    if (index == kAdded) { update(EPOLL_CTL_DEL, channel); }
     channel->set_index(kNew);
 }
 
-void
-EPollPoller::update(int operation, Channel* channel) {
+void EPollPoller::update(int operation, Channel* channel) {
     struct epoll_event event;
     memset(&event, 0, sizeof event);
     event.events   = channel->events();
     event.data.ptr = channel;
     int fd         = channel->fd();
-    LOG_TRACE << "epoll_ctl op = " << operationToString(operation)
+    std::cout << "epoll_ctl op = " << operationToString(operation)
               << " fd = " << fd << " event = { " << channel->eventsToString()
               << " }";
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0) {
         if (operation == EPOLL_CTL_DEL) {
-            LOG_SYSERR << "epoll_ctl op =" << operationToString(operation)
-                       << " fd =" << fd;
+            std::cerr << "epoll_ctl op =" << operationToString(operation)
+                      << " fd =" << fd;
         } else {
-            LOG_SYSFATAL << "epoll_ctl op =" << operationToString(operation)
-                         << " fd =" << fd;
+            std::cerr << "epoll_ctl op =" << operationToString(operation)
+                      << " fd =" << fd;
         }
     }
 }
 
-const char*
-EPollPoller::operationToString(int op) {
+const char* EPollPoller::operationToString(int op) {
     switch (op) {
-        case EPOLL_CTL_ADD:
-            return "ADD";
-        case EPOLL_CTL_DEL:
-            return "DEL";
-        case EPOLL_CTL_MOD:
-            return "MOD";
-        default:
-            assert(false && "ERROR op");
-            return "Unknown Operation";
+        case EPOLL_CTL_ADD: return "ADD";
+        case EPOLL_CTL_DEL: return "DEL";
+        case EPOLL_CTL_MOD: return "MOD";
+        default: assert(false && "ERROR op"); return "Unknown Operation";
     }
 }

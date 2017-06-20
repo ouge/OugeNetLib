@@ -1,52 +1,39 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
+#ifndef NET_EVENTLOOPTHREAD_H
+#define NET_EVENTLOOPTHREAD_H
 
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is a public header file, it must only include public header files.
+#include "base/Thread.h"
 
-#ifndef MUDUO_NET_EVENTLOOPTHREAD_H
-#define MUDUO_NET_EVENTLOOPTHREAD_H
+#include "base/Copyable.h"
 
-#include <muduo/base/Condition.h>
-#include <muduo/base/Mutex.h>
-#include <muduo/base/Thread.h>
+#include <mutex>
+#include <condition_variable>
 
-#include <boost/noncopyable.hpp>
+namespace ouge {
 
-namespace muduo
-{
-namespace net
-{
+namespace net {
 
 class EventLoop;
 
-class EventLoopThread : boost::noncopyable
-{
- public:
-  typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+class EventLoopThread : NonCopyable {
+  public:
+    using ThreadInitCallback = std::function<void(EventLoop*)>;
 
-  EventLoopThread(const ThreadInitCallback& cb = ThreadInitCallback(),
-                  const string& name = string());
-  ~EventLoopThread();
-  EventLoop* startLoop();
+    EventLoopThread(const ThreadInitCallback& cb   = ThreadInitCallback(),
+                    const std::string&        name = std::string());
+    ~EventLoopThread();
+    EventLoop* startLoop();
 
- private:
-  void threadFunc();
+  private:
+    void threadFunc();
 
-  EventLoop* loop_;
-  bool exiting_;
-  Thread thread_;
-  MutexLock mutex_;
-  Condition cond_;
-  ThreadInitCallback callback_;
+    EventLoop*                  loop_;
+    bool                        exiting_;
+    Thread                      thread_;
+    std::mutex                  mutex_;
+    std::condition_variable_any cond_;
+    ThreadInitCallback          callback_;
 };
+}    // namespace ouge::net
+}    // namespace ouge
 
-}
-}
-
-#endif  // MUDUO_NET_EVENTLOOPTHREAD_H
-
+#endif    // NET_EVENTLOOPTHREAD_H

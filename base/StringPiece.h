@@ -6,8 +6,6 @@
 
 #include <cstring>
 
-//#include <iosfwd>
-
 namespace ouge {
 
 // For passing C-style string argument to a function.
@@ -15,7 +13,8 @@ class StringArg : public Copyable {
   public:
     StringArg(const char* str) : str_(str) {}
     StringArg(const std::string& str) : str_(str.c_str()) {}
-    const char*                  c_str() const { return str_; }
+
+    const char* c_str() const { return str_; }
 
   private:
     const char* str_;
@@ -85,8 +84,8 @@ class StringPiece {
 
 #define STRINGPIECE_BINARY_PREDICATE(cmp, auxcmp)                              \
     bool operator cmp(const StringPiece& x) const {                            \
-        int r = memcmp(                                                        \
-                ptr_, x.ptr_, length_ < x.length_ ? length_ : x.length_);      \
+        int r = memcmp(ptr_, x.ptr_,                                           \
+                       length_ < x.length_ ? length_ : x.length_);             \
         return ((r auxcmp 0) || ((r == 0) && (length_ cmp x.length_)));        \
     }
     STRINGPIECE_BINARY_PREDICATE(<, <);
@@ -120,22 +119,6 @@ class StringPiece {
 };
 
 }    // namespace ouge
-
-// ------------------------------------------------------------------
-// Functions used to create STL containers that use StringPiece
-//  Remember that a StringPiece's lifetime had better be less than
-//  that of the underlying string or char*.  If it is not, then you
-//  cannot safely store a StringPiece into an STL container
-// ------------------------------------------------------------------
-
-// This makes vector<StringPiece> really fast for some STL implementations
-template <>
-struct __type_traits<ouge::StringPiece> {
-    typedef __true_type has_trivial_default_constructor;
-    typedef __true_type has_trivial_copy_constructor;
-    typedef __true_type has_trivial_assignment_operator;
-    typedef __true_type has_trivial_destructor typedef __true_type is_POD_type;
-};
 
 // allow StringPiece to be logged
 std::ostream& operator<<(std::ostream& o, const ouge::StringPiece& piece);

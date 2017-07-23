@@ -39,4 +39,4 @@ inline uint16_t networkToHost16(uint16_t net16) { return be16toh(net16); }
 }
 }
 
-#endif    // MUDUO_NET_ENDIAN_H
+#endif

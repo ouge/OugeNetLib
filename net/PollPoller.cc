@@ -1,13 +1,14 @@
 #include "net/PollPoller.h"
 
-#include "base/Logging.h"
 #include "base/Types.h"
 #include "net/Channel.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
+#include <iostream>
 
+using namespace std;
 using namespace ouge;
 using namespace ouge::net;
 
@@ -15,31 +16,28 @@ PollPoller::PollPoller(EventLoop* loop) : Poller(loop) {}
 
 PollPoller::~PollPoller() {}
 
-Timestamp
-PollPoller::poll(int timeoutMs, ChannelList* activeChannels) {
+Timestamp PollPoller::poll(int timeoutMs, ChannelList* activeChannels) {
     int numEvents  = ::poll(&*pollfds_.begin(), pollfds_.size(), timeoutMs);
     int savedErrno = errno;
     Timestamp now(Timestamp::now());
     if (numEvents > 0) {
-        LOG_TRACE << numEvents << " events happended";
+        cout << numEvents << " events happended";
         fillActiveChannels(numEvents, activeChannels);
     } else if (numEvents == 0) {
-        LOG_TRACE << " nothing happended";
+        cout << " nothing happended";
     } else {
         if (savedErrno != EINTR) {
             errno = savedErrno;
-            LOG_SYSERR << "PollPoller::poll()";
+            cerr << "PollPoller::poll()";
         }
     }
     return now;
 }
 
-void
-PollPoller::fillActiveChannels(int          numEvents,
-                               ChannelList* activeChannels) const {
+void PollPoller::fillActiveChannels(int          numEvents,
+                                    ChannelList* activeChannels) const {
     for (PollFdList::const_iterator pfd = pollfds_.begin();
-         pfd != pollfds_.end() && numEvents > 0;
-         ++pfd) {
+         pfd != pollfds_.end() && numEvents > 0; ++pfd) {
         if (pfd->revents > 0) {
             --numEvents;
             ChannelMap::const_iterator ch = channels_.find(pfd->fd);
@@ -52,12 +50,10 @@ PollPoller::fillActiveChannels(int          numEvents,
     }
 }
 
-void
-PollPoller::updateChannel(Channel* channel) {
+void PollPoller::updateChannel(Channel* channel) {
     Poller::assertInLoopThread();
-    LOG_TRACE << "fd = " << channel->fd() << " events = " << channel->events();
+    cout << "fd = " << channel->fd() << " events = " << channel->events();
     if (channel->index() < 0) {
-        // a new one, add to pollfds_
         assert(channels_.find(channel->fd()) == channels_.end());
         struct pollfd pfd;
         pfd.fd      = channel->fd();
@@ -68,7 +64,6 @@ PollPoller::updateChannel(Channel* channel) {
         channel->set_index(idx);
         channels_[pfd.fd] = channel;
     } else {
-        // update existing one
         assert(channels_.find(channel->fd()) != channels_.end());
         assert(channels_[channel->fd()] == channel);
         int idx = channel->index();
@@ -77,17 +72,13 @@ PollPoller::updateChannel(Channel* channel) {
         assert(pfd.fd == channel->fd() || pfd.fd == -channel->fd() - 1);
         pfd.events  = static_cast<short>(channel->events());
         pfd.revents = 0;
-        if (channel->isNoneEvent()) {
-            // ignore this pollfd
-            pfd.fd = -channel->fd() - 1;
-        }
+        if (channel->isNoneEvent()) { pfd.fd = -channel->fd() - 1; }
     }
 }
 
-void
-PollPoller::removeChannel(Channel* channel) {
+void PollPoller::removeChannel(Channel* channel) {
     Poller::assertInLoopThread();
-    LOG_TRACE << "fd = " << channel->fd();
+    cout << "fd = " << channel->fd();
     assert(channels_.find(channel->fd()) != channels_.end());
     assert(channels_[channel->fd()] == channel);
     assert(channel->isNoneEvent());
@@ -104,9 +95,7 @@ PollPoller::removeChannel(Channel* channel) {
     } else {
         int channelAtEnd = pollfds_.back().fd;
         iter_swap(pollfds_.begin() + idx, pollfds_.end() - 1);
-        if (channelAtEnd < 0) {
-            channelAtEnd = -channelAtEnd - 1;
-        }
+        if (channelAtEnd < 0) { channelAtEnd = -channelAtEnd - 1; }
         channels_[channelAtEnd]->set_index(idx);
         pollfds_.pop_back();
     }

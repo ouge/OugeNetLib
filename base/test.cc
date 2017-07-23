@@ -1,3 +1,2 @@
 #include "base/BoundedBlockingQueue.h"
-int main()
-{}
+int main() {}

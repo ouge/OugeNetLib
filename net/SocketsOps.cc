@@ -1,17 +1,19 @@
 
 #include "net/SocketsOps.h"
 
-#include "base/Logging.h"
 #include "base/Types.h"
 #include "net/Endian.h"
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>      // snprintf
-#include <strings.h>    // bzero
+#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <iostream>
+#include <cstring>
+#include <cassert>
 
+using namespace std;
 using namespace ouge;
 using namespace ouge::net;
 
@@ -20,61 +22,47 @@ namespace {
 using SA = struct sockaddr;
 }
 
-struct sockaddr*
-sockets::sockaddr_cast(struct sockaddr_in* addr) {
+struct sockaddr* sockets::sockaddr_cast(struct sockaddr_in* addr) {
     return static_cast<struct sockaddr*>(implicit_cast<void*>(addr));
 }
 
-const struct sockaddr*
-sockets::sockaddr_cast(const struct sockaddr_in* addr) {
+const struct sockaddr* sockets::sockaddr_cast(const struct sockaddr_in* addr) {
     return static_cast<const struct sockaddr*>(
             implicit_cast<const void*>(addr));
 }
 
-const struct sockaddr_in*
-sockets::sockaddr_in_cast(const struct sockaddr* addr) {
+const struct sockaddr_in* sockets::sockaddr_in_cast(
+        const struct sockaddr* addr) {
     return static_cast<const struct sockaddr_in*>(
             implicit_cast<const void*>(addr));
 }
 
-int
-sockets::createNonblockingOrDie(sa_family_t family) {
-    int sockfd = ::socket(
-            family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
-    if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::createNonblockingOrDie";
-    }
+int sockets::createNonblockingOrDie(sa_family_t family) {
+    int sockfd = ::socket(family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
+                          IPPROTO_TCP);
+    if (sockfd < 0) { cerr << "sockets::createNonblockingOrDie"; }
     return sockfd;
 }
 
-void
-sockets::bindOrDie(int sockfd, const struct sockaddr* addr) {
-    int ret = ::bind(
-            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
-    if (ret < 0) {
-        LOG_SYSFATAL << "sockets::bindOrDie";
-    }
+void sockets::bindOrDie(int sockfd, const struct sockaddr* addr) {
+    int ret = ::bind(sockfd, addr,
+                     static_cast<socklen_t>(sizeof(struct sockaddr_in)));
+    if (ret < 0) { cerr << "sockets::bindOrDie"; }
 }
 
-void
-sockets::listenOrDie(int sockfd) {
+void sockets::listenOrDie(int sockfd) {
     int ret = ::listen(sockfd, SOMAXCONN);
-    if (ret < 0) {
-        LOG_SYSFATAL << "sockets::listenOrDie";
-    }
+    if (ret < 0) { cerr << "sockets::listenOrDie"; }
 }
 
-int
-sockets::accept(int sockfd, struct sockaddr_in* addr) {
+int sockets::accept(int sockfd, struct sockaddr_in* addr) {
     socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-    int       connfd  = ::accept4(sockfd,
-                           sockaddr_cast(addr),
-                           &addrlen,
+    int       connfd  = ::accept4(sockfd, sockaddr_cast(addr), &addrlen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
 
     if (connfd < 0) {
         int savedErrno = errno;
-        LOG_SYSERR << "Socket::accept";
+        cerr << "Socket::accept";
         switch (savedErrno) {
             case EAGAIN:
             case ECONNABORTED:
@@ -94,53 +82,40 @@ sockets::accept(int sockfd, struct sockaddr_in* addr) {
             case ENOTSOCK:
             case EOPNOTSUPP:
                 // unexpected errors
-                LOG_FATAL << "unexpected error of ::accept " << savedErrno;
+                cerr << "unexpected error of ::accept " << savedErrno;
                 break;
-            default:
-                LOG_FATAL << "unknown error of ::accept " << savedErrno;
-                break;
+            default: cerr << "unknown error of ::accept " << savedErrno; break;
         }
     }
     return connfd;
 }
 
-int
-sockets::connect(int sockfd, const struct sockaddr* addr) {
-    return ::connect(
-            sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
+int sockets::connect(int sockfd, const struct sockaddr* addr) {
+    return ::connect(sockfd, addr,
+                     static_cast<socklen_t>(sizeof(struct sockaddr_in)));
 }
 
-ssize_t
-sockets::read(int sockfd, void* buf, size_t count) {
+ssize_t sockets::read(int sockfd, void* buf, size_t count) {
     return ::read(sockfd, buf, count);
 }
 
-ssize_t
-sockets::readv(int sockfd, const struct iovec* iov, int iovcnt) {
+ssize_t sockets::readv(int sockfd, const struct iovec* iov, int iovcnt) {
     return ::readv(sockfd, iov, iovcnt);
 }
 
-ssize_t
-sockets::write(int sockfd, const void* buf, size_t count) {
+ssize_t sockets::write(int sockfd, const void* buf, size_t count) {
     return ::write(sockfd, buf, count);
 }
 
-void
-sockets::close(int sockfd) {
-    if (::close(sockfd) < 0) {
-        LOG_SYSERR << "sockets::close";
-    }
+void sockets::close(int sockfd) {
+    if (::close(sockfd) < 0) { cerr << "sockets::close"; }
 }
 
-void
-sockets::shutdownWrite(int sockfd) {
-    if (::shutdown(sockfd, SHUT_WR) < 0) {
-        LOG_SYSERR << "sockets::shutdownWrite";
-    }
+void sockets::shutdownWrite(int sockfd) {
+    if (::shutdown(sockfd, SHUT_WR) < 0) { cerr << "sockets::shutdownWrite"; }
 }
 
-void
-sockets::toIpPort(char* buf, size_t size, const struct sockaddr* addr) {
+void sockets::toIpPort(char* buf, size_t size, const struct sockaddr* addr) {
     toIp(buf, size, addr);
     size_t                    end   = ::strlen(buf);
     const struct sockaddr_in* addr4 = sockaddr_in_cast(addr);
@@ -149,27 +124,25 @@ sockets::toIpPort(char* buf, size_t size, const struct sockaddr* addr) {
     snprintf(buf + end, size - end, ":%u", port);
 }
 
-void
-sockets::toIp(char* buf, size_t size, const struct sockaddr* addr) {
+void sockets::toIp(char* buf, size_t size, const struct sockaddr* addr) {
     if (addr->sa_family == AF_INET) {
         assert(size >= INET_ADDRSTRLEN);
         const struct sockaddr_in* addr4 = sockaddr_in_cast(addr);
-        ::inet_ntop(
-                AF_INET, &addr4->sin_addr, buf, static_cast<socklen_t>(size));
+        ::inet_ntop(AF_INET, &addr4->sin_addr, buf,
+                    static_cast<socklen_t>(size));
     }
 }
 
-void
-sockets::fromIpPort(const char* ip, uint16_t port, struct sockaddr_in* addr) {
+void sockets::fromIpPort(const char* ip, uint16_t port,
+                         struct sockaddr_in* addr) {
     addr->sin_family = AF_INET;
     addr->sin_port   = hostToNetwork16(port);
     if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
-        LOG_SYSERR << "sockets::fromIpPort";
+        cerr << "sockets::fromIpPort";
     }
 }
 
-int
-sockets::getSocketError(int sockfd) {
+int sockets::getSocketError(int sockfd) {
     int       optval;
     socklen_t optlen = static_cast<socklen_t>(sizeof optval);
 
@@ -180,24 +153,22 @@ sockets::getSocketError(int sockfd) {
     }
 }
 
-struct sockaddr_in
-sockets::getLocalAddr(int sockfd) {
+struct sockaddr_in sockets::getLocalAddr(int sockfd) {
     struct sockaddr_in localaddr;
     memset(&localaddr, 0, sizeof localaddr);
     socklen_t addrlen = static_cast<socklen_t>(sizeof localaddr);
     if (::getsockname(sockfd, sockaddr_cast(&localaddr), &addrlen) < 0) {
-        LOG_SYSERR << "sockets::getLocalAddr";
+        cerr << "sockets::getLocalAddr";
     }
     return localaddr;
 }
 
-struct sockaddr_in
-sockets::getPeerAddr(int sockfd) {
+struct sockaddr_in sockets::getPeerAddr(int sockfd) {
     struct sockaddr_in peeraddr;
     memset(&peeraddr, 0, sizeof peeraddr);
     socklen_t addrlen = static_cast<socklen_t>(sizeof peeraddr);
     if (::getpeername(sockfd, sockaddr_cast(&peeraddr), &addrlen) < 0) {
-        LOG_SYSERR << "sockets::getPeerAddr";
+        cerr << "sockets::getPeerAddr";
     }
     return peeraddr;
 }
@@ -206,8 +177,7 @@ sockets::getPeerAddr(int sockfd) {
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-bool
-sockets::isSelfConnect(int sockfd) {
+bool sockets::isSelfConnect(int sockfd) {
     struct sockaddr_in localaddr = getLocalAddr(sockfd);
     struct sockaddr_in peeraddr  = getPeerAddr(sockfd);
     if (localaddr.sin_family == AF_INET) {

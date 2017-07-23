@@ -33,7 +33,7 @@ class BoundedBlockingQueue : NonCopyable {
         notEmpty_.notify_one();
     }
 
-    T take() const {
+    T take() {
         std::unique_lock<std::mutex> lock(mutex_);
         notEmpty_.wait(lock, !queue_.empty());
         assert(!queue_.empty());

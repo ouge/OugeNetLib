@@ -53,12 +53,10 @@ void EPollPoller::fillActiveChannels(int          numEvents,
     assert(implicit_cast<size_t>(numEvents) <= events_.size());
     for (int i = 0; i < numEvents; ++i) {
         Channel* channel = static_cast<Channel*>(events_[i].data.ptr);
-#ifndef NDEBUG
-        int                        fd = channel->fd();
+        int      fd      = channel->fd();
         ChannelMap::const_iterator it = channels_.find(fd);
         assert(it != channels_.end());
         assert(it->second == channel);
-#endif
         channel->set_revents(events_[i].events);
         activeChannels->push_back(channel);
     }
@@ -70,13 +68,11 @@ void EPollPoller::updateChannel(Channel* channel) {
     std::cout << "fd = " << channel->fd() << " events = " << channel->events()
               << " index = " << index;
     if (index == kNew || index == kDeleted) {
-        // a new one, add with EPOLL_CTL_ADD
         int fd = channel->fd();
         if (index == kNew) {
             assert(channels_.find(fd) == channels_.end());
             channels_[fd] = channel;
-        } else    // index == kDeleted
-        {
+        } else {
             assert(channels_.find(fd) != channels_.end());
             assert(channels_[fd] == channel);
         }
@@ -84,7 +80,6 @@ void EPollPoller::updateChannel(Channel* channel) {
         channel->set_index(kAdded);
         update(EPOLL_CTL_ADD, channel);
     } else {
-        // update existing one with EPOLL_CTL_MOD/DEL
         int fd = channel->fd();
         (void)fd;
         assert(channels_.find(fd) != channels_.end());

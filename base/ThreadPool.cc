@@ -5,7 +5,9 @@
 #include <cassert>
 #include <cstdio>
 #include <functional>
+#include <thread>
 
+using namespace std;
 using namespace ouge;
 
 ThreadPool::ThreadPool(const std::string& nameArg)
@@ -17,52 +19,42 @@ ThreadPool::ThreadPool(const std::string& nameArg)
           running_(false) {}
 
 ThreadPool::~ThreadPool() {
-    if (running_) {
-        stop();
-    }
+    if (running_) { stop(); }
 }
 
-void
-ThreadPool::start(int numThreads) {
+void ThreadPool::start(int numThreads) {
     assert(threads_.empty());
     running_ = true;
     threads_.reserve(numThreads);
     for (int i = 0; i < numThreads; ++i) {
         char id[32];
         snprintf(id, sizeof id, "%d", i + 1);
-        threads_.push_back(new Thread([this]() { runInThread(); }, name_ + id));
-        threads_[i].start();
+        threads_.push_back(new thread([this]() { runInThread(); }));
     }
-    if (numThreads == 0 && threadInitCallback_) {
-        threadInitCallback_();
-    }
+    if (numThreads == 0 && threadInitCallback_) { threadInitCallback_(); }
 }
 
-void
-ThreadPool::stop() {
+void ThreadPool::stop() {
     {
         std::unique_lock<std::mutex> lock(mutex_);
         running_ = false;
         notEmpty_.notify_all();
     }
-    for_each(threads_.begin(),
-             threads_.end(),
-             std::bind(&Thread::join, std::placeholders::_1));
+    for_each(threads_.begin(), threads_.end(),
+             std::bind(&thread::join, placeholders::_1));
 }
 
-size_t
-ThreadPool::queueSize() const {
+size_t ThreadPool::queueSize() const {
     std::unique_lock<std::mutex> lock(mutex_);
     return queue_.size();
 }
 
-void
-ThreadPool::run(const Task& task) {
+void ThreadPool::run(const Task& task) {
     if (threads_.empty()) {
         task();
     } else {
         std::unique_lock<std::mutex> lock(mutex_);
-        notFull_.wait(lock, !isFull());
+        notFull_.wait(lock, [this] { return !isFull(); });
         assert(!isFull());
 
         queue_.push_back(task);
@@ -70,13 +62,12 @@ ThreadPool::run(const Task& task) {
     }
 }
 
-void
-ThreadPool::run(Task&& task) {
+void ThreadPool::run(Task&& task) {
     if (threads_.empty()) {
         task();
     } else {
         std::unique_lock<std::mutex> lock(mutex_);
-        notFull_.wait(lock, !isFull());
+        notFull_.wait(lock, [this] { return !isFull(); });
         assert(!isFull());
 
         queue_.push_back(std::move(task));
@@ -84,37 +75,28 @@ ThreadPool::run(Task&& task) {
     }
 }
 
-ThreadPool::Task
-ThreadPool::take() {
+ThreadPool::Task ThreadPool::take() {
     std::unique_lock<std::mutex> lock(mutex_);
-    notEmpty_.wait(lock, !queue_.empty() || !running_);
+    notEmpty_.wait(lock, [this] { return !queue_.empty() || !running_; });
     Task task;
     if (!queue_.empty()) {
         task = queue_.front();
         queue_.pop_front();
-        if (maxQueueSize_ > 0) {
-            notFull_.notify_one();
-        }
+        if (maxQueueSize_ > 0) { notFull_.notify_one(); }
     }
     return task;
 }
 
-bool
-ThreadPool::isFull() const {
+bool ThreadPool::isFull() const {
     return maxQueueSize_ > 0 && queue_.size() >= maxQueueSize_;
 }
 
-void
-ThreadPool::runInThread() {
+void ThreadPool::runInThread() {
     try {
-        if (threadInitCallback_) {
-            threadInitCallback_();
-        }
+        if (threadInitCallback_) { threadInitCallback_(); }
         while (running_) {
             Task task(move(take()));
-            if (task) {
-                task();
-            }
+            if (task) { task(); }
         }
     } catch (const Exception& ex) {
         fprintf(stderr, "exception caught in ThreadPool %s\n", name_.c_str());
@@ -126,8 +108,7 @@ ThreadPool::runInThread() {
         fprintf(stderr, "reason: %s\n", ex.what());
         abort();
     } catch (...) {
-        fprintf(stderr,
-                "unknown exception caught in ThreadPool %s\n",
+        fprintf(stderr, "unknown exception caught in ThreadPool %s\n",
                 name_.c_str());
         throw;    // rethrow
     }

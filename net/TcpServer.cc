@@ -9,6 +9,7 @@
 #include <functional>
 #include <iostream>
 
+using namespace std;
 using namespace ouge;
 using namespace ouge::net;
 
@@ -48,7 +49,7 @@ void TcpServer::setThreadNum(int numThreads) {
 }
 
 void TcpServer::start() {
-    if (started_.getAndSet(1) == 0) {
+    if (started_.exchange(1) == 0) {
         threadPool_->start(threadInitCallback_);
 
         assert(!acceptor_->listenning());
@@ -64,8 +65,8 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
     ++nextConnId_;
     string connName = name_ + buf;
 
-    LOG_INFO << "TcpServer::newConnection [" << name_ << "] - new connection ["
-             << connName << "] from " << peerAddr.toIpPort();
+    cout << "TcpServer::newConnection [" << name_ << "] - new connection ["
+         << connName << "] from " << peerAddr.toIpPort();
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     // FIXME poll with zero timeout to double confirm the new connection
     // FIXME use make_shared if necessary
@@ -75,20 +76,19 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
-    conn->setCloseCallback(std::bind(&TcpServer::removeConnection, this,
-                                     _1));    // FIXME: unsafe
+    conn->setCloseCallback(
+            std::bind(&TcpServer::removeConnection, this, placeholders::_1));
     ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
 }
 
 void TcpServer::removeConnection(const TcpConnectionPtr& conn) {
-    // FIXME: unsafe
     loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop, this, conn));
 }
 
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn) {
     loop_->assertInLoopThread();
-    LOG_INFO << "TcpServer::removeConnectionInLoop [" << name_
-             << "] - connection " << conn->name();
+    cout << "TcpServer::removeConnectionInLoop [" << name_ << "] - connection "
+         << conn->name();
     size_t n = connections_.erase(conn->name());
     (void)n;
     assert(n == 1);

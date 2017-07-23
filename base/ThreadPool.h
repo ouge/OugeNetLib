@@ -1,8 +1,6 @@
 #ifndef BASE_THREADPOOL_H
 #define BASE_THREADPOOL_H
 
-#include "base/Thread.h"
-
 #include "base/Copyable.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -10,6 +8,7 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
 
 namespace ouge {
 
@@ -34,15 +33,15 @@ class ThreadPool : NonCopyable {
     void runInThread();
     Task take();
 
-    mutable std::mutex              mutex_;
-    std::condition_variable         notEmpty_;
-    std::condition_variable         notFull_;
-    std::string                     name_;
-    Task                            threadInitCallback_;
-    boost::ptr_vector<ouge::Thread> threads_;
-    std::deque<Task>                queue_;
-    size_t                          maxQueueSize_;
-    bool                            running_;
+    mutable std::mutex             mutex_;
+    std::condition_variable        notEmpty_;
+    std::condition_variable        notFull_;
+    std::string                    name_;
+    Task                           threadInitCallback_;
+    boost::ptr_vector<std::thread> threads_;
+    std::deque<Task>               queue_;
+    size_t                         maxQueueSize_;
+    bool                           running_;
 };
 }
 

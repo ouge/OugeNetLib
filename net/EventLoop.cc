@@ -1,5 +1,4 @@
 #include "net/EventLoop.h"
-#include "base/CurrentThread.h"
 #include "net/Channel.h"
 #include "net/Poller.h"
 #include "net/SocketsOps.h"
@@ -8,19 +7,25 @@
 
 #include <cassert>
 #include <iostream>
-#include <signal.h>
-#include <sys/eventfd.h>
 #include <functional>
 
-namespace {
-thread_local ouge::net::EventLoop* t_loopInThisThread = 0;
+#include <signal.h>
+#include <sys/eventfd.h>
 
+using namespace std;
+using namespace ouge;
+using namespace ouge::net;
+
+namespace {
+// 每个线程一个EventLoop
+thread_local EventLoop* t_loopInThisThread = 0;
+// 最长阻塞再epoll/poll的时间
 const int kPollTimeMs = 10000;
 
 int createEventfd() {
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0) {
-        std::cerr << "Failed in eventfd\n";
+        std::cerr << "Failed in eventfd\n" << std::endl;
         abort();
     }
     return evtfd;
@@ -38,9 +43,6 @@ class IgnoreSigPipe {
 IgnoreSigPipe initObj;
 }    // local namespace
 
-using namespace ouge;
-using namespace ouge::net;
-
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {
     return t_loopInThisThread;
 }
@@ -50,17 +52,18 @@ EventLoop::EventLoop()
           quit_(false),
           eventHandling_(false),
           callingPendingFunctors_(false),
-          iteration_(0),
-          threadId_(CurrentThread::tid()),
+          threadId_(this_thread::get_id()),
           poller_(Poller::newDefaultPoller(this)),
           timerQueue_(new TimerQueue(this)),
           wakeupFd_(createEventfd()),
           wakeupChannel_(new Channel(this, wakeupFd_)),
           currentActiveChannel_(NULL) {
-    std::cout << "EventLoop created " << this << " in thread " << threadId_;
+    std::cout << "EventLoop created " << this << " in thread " << threadId_
+              << endl;
     if (t_loopInThisThread) {
+        // 当前线程已经存在Eventloop。
         std::cerr << "Another EventLoop " << t_loopInThisThread
-                  << " exists in this thread " << threadId_;
+                  << " exists in this thread " << threadId_ << endl;
     } else {
         t_loopInThisThread = this;
     }
@@ -70,7 +73,7 @@ EventLoop::EventLoop()
 
 EventLoop::~EventLoop() {
     std::cout << "EventLoop " << this << " of thread " << threadId_
-              << " destructs in thread " << CurrentThread::tid();
+              << " destructs in thread " << this_thread::get_id() << endl;
     wakeupChannel_->disableAll();
     wakeupChannel_->remove();
     ::close(wakeupFd_);
@@ -87,8 +90,7 @@ void EventLoop::loop() {
     while (!quit_) {
         activeChannels_.clear();
         pollReturnTime_ = poller_->poll(kPollTimeMs, &activeChannels_);
-        ++iteration_;
-        // printActiveChannels();
+        printActiveChannels();
         eventHandling_ = true;
         for (ChannelList::iterator it = activeChannels_.begin();
              it != activeChannels_.end(); ++it) {
@@ -140,9 +142,11 @@ void EventLoop::queueInLoop(const Functor& cb) {
 void EventLoop::queueInLoop(Functor&& cb) {
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        pendingFunctors_.push_back(std::move(cb));    // emplace_back
+        pendingFunctors_.push_back(std::move(cb));
     }
 
+    // 如果是在Loop thread 中，则此时一定正在执行channl回调函数或者pending队列的函数。
+    // 执行channal回调时无须wakeup，因为稍后一定会立即执行cb。
     if (!isInLoopThread() || callingPendingFunctors_) { wakeup(); }
 }
 
@@ -206,9 +210,9 @@ bool EventLoop::hasChannel(Channel* channel) {
 }
 
 void EventLoop::abortNotInLoopThread() {
-    std::cerr << "EventLoop::abortNotInLoopThread - EventLoop " << this
-              << " was created in threadId_ = " << threadId_
-              << ", current thread id = " << CurrentThread::tid();
+    cerr << "EventLoop::abortNotInLoopThread - EventLoop " << this
+         << " was created in threadId_ = " << threadId_
+         << ", current thread id = " << this_thread::get_id() << endl;
 }
 
 void EventLoop::wakeup() {
@@ -224,8 +228,8 @@ void EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t  n   = sockets::read(wakeupFd_, &one, sizeof one);
     if (n != sizeof one) {
-        std::cerr << "EventLoop::handleRead() reads " << n
-                  << " bytes instead of 8";
+        cerr << "EventLoop::handleRead() reads " << n << " bytes instead of 8"
+             << endl;
     }
 }
 
@@ -238,14 +242,13 @@ void EventLoop::doPendingFunctors() {
         functors.swap(pendingFunctors_);
     }
 
-    for (size_t i           = 0; i < functors.size(); ++i) { functors[i](); }
+    for (size_t i = 0; i < functors.size(); ++i) { functors[i](); }
+
     callingPendingFunctors_ = false;
 }
 
 void EventLoop::printActiveChannels() const {
-    for (ChannelList::const_iterator it = activeChannels_.begin();
-         it != activeChannels_.end(); ++it) {
-        const Channel* ch = *it;
-        std::cout << "{" << ch->reventsToString() << "} ";
+    for (const auto& channelPtr : activeChannels_) {
+        cout << "{" << channelPtr->reventsToString() << "}" << endl;
     }
 }

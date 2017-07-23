@@ -8,7 +8,6 @@
 
 namespace ouge {
 
-// TODO:使用？
 // 线程局部的单例类型
 template <typename T>
 class ThreadLocalSingleton : NonCopyable {
@@ -31,7 +30,6 @@ class ThreadLocalSingleton : NonCopyable {
     // 释放线程局部变量的空间，每当线程退出时，会自动将
     static void destructor(void* obj) {
         assert(obj == t_value_);
-        // TODO: 啥意思
         using T_must_be_complete_type = char[sizeof(T) == 0 ? -1 : 1];
         T_must_be_complete_type dummy;
         (void)dummy;

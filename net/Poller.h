@@ -16,7 +16,9 @@ class Channel;
 class Poller : NonCopyable {
   public:
     using ChannelList = std::vector<Channel*>;
+    using ChannelMap  = std::map<int, Channel*>;
 
+  public:
     Poller(EventLoop* loop);
     virtual ~Poller();
 
@@ -39,7 +41,6 @@ class Poller : NonCopyable {
     void assertInLoopThread() const { ownerLoop_->assertInLoopThread(); }
 
   protected:
-    using ChannelMap = std::map<int, Channel*>;
     Poller::ChannelMap channels_;
 
   private:

@@ -1,34 +1,30 @@
 #include "net/TimerQueue.h"
 
-#include "base/Logging.h"
 #include "net/EventLoop.h"
 #include "net/Timer.h"
 #include "net/TimerId.h"
 
-#include <boost/bind.hpp>
-
+#include <functional>
 #include <sys/timerfd.h>
+#include <iostream>
+#include <cassert>
+
+using namespace std;
 
 namespace ouge {
 namespace net {
 namespace detail {
 
-int
-createTimerfd() {
+int createTimerfd() {
     int timerfd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
-    if (timerfd < 0) {
-        LOG_SYSFATAL << "Failed in timerfd_create";
-    }
+    if (timerfd < 0) { cerr << "Failed in timerfd_create" << endl; }
     return timerfd;
 }
 
-struct timespec
-howMuchTimeFromNow(Timestamp when) {
+struct timespec howMuchTimeFromNow(Timestamp when) {
     int64_t microseconds = when.microSecondsSinceEpoch()
                            - Timestamp::now().microSecondsSinceEpoch();
-    if (microseconds < 100) {
-        microseconds = 100;
-    }
+    if (microseconds < 100) { microseconds = 100; }
     struct timespec ts;
     ts.tv_sec = static_cast<time_t>(microseconds
                                     / Timestamp::kMicroSecondsPerSecond);
@@ -37,20 +33,18 @@ howMuchTimeFromNow(Timestamp when) {
     return ts;
 }
 
-void
-readTimerfd(int timerfd, Timestamp now) {
+void readTimerfd(int timerfd, Timestamp now) {
     uint64_t howmany;
     ssize_t  n = ::read(timerfd, &howmany, sizeof howmany);
-    LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at "
-              << now.toString();
+    cout << "TimerQueue::handleRead() " << howmany << " at " << now.toString()
+         << endl;
     if (n != sizeof howmany) {
-        LOG_ERROR << "TimerQueue::handleRead() reads " << n
-                  << " bytes instead of 8";
+        cerr << "TimerQueue::handleRead() reads " << n << " bytes instead of 8"
+             << endl;
     }
 }
 
-void
-resetTimerfd(int timerfd, Timestamp expiration) {
+void resetTimerfd(int timerfd, Timestamp expiration) {
     // wake up loop by timerfd_settime()
     struct itimerspec newValue;
     struct itimerspec oldValue;
@@ -58,13 +52,11 @@ resetTimerfd(int timerfd, Timestamp expiration) {
     memset(&oldValue, 0, sizeof oldValue);
     newValue.it_value = howMuchTimeFromNow(expiration);
     int ret           = ::timerfd_settime(timerfd, 0, &newValue, &oldValue);
-    if (ret) {
-        LOG_SYSERR << "timerfd_settime()";
-    }
+    if (ret) { cerr << "timerfd_settime()" << endl; }
 }
 
-}    // namespace ouge::net::detail
-}    // namespace ouge::net
+}    // namespace detail
+}    // namespace net
 }    // namesace ouge
 
 using namespace ouge;
@@ -77,8 +69,7 @@ TimerQueue::TimerQueue(EventLoop* loop)
           timerfdChannel_(loop, timerfd_),
           timers_(),
           callingExpiredTimers_(false) {
-    timerfdChannel_.setReadCallback(boost::bind(&TimerQueue::handleRead, this));
-    // we are always reading the timerfd, we disarm it with timerfd_settime.
+    timerfdChannel_.setReadCallback(bind(&TimerQueue::handleRead, this));
     timerfdChannel_.enableReading();
 }
 
@@ -92,37 +83,32 @@ TimerQueue::~TimerQueue() {
     }
 }
 
-TimerId
-TimerQueue::addTimer(const TimerCallback& cb, Timestamp when, double interval) {
+TimerId TimerQueue::addTimer(const TimerCallback& cb, Timestamp when,
+                             double interval) {
     Timer* timer = new Timer(cb, when, interval);
-    loop_->runInLoop(boost::bind(&TimerQueue::addTimerInLoop, this, timer));
+    loop_->runInLoop(bind(&TimerQueue::addTimerInLoop, this, timer));
     return TimerId(timer, timer->sequence());
 }
 
-TimerId
-TimerQueue::addTimer(TimerCallback&& cb, Timestamp when, double interval) {
+TimerId TimerQueue::addTimer(TimerCallback&& cb, Timestamp when,
+                             double interval) {
     Timer* timer = new Timer(std::move(cb), when, interval);
-    loop_->runInLoop(boost::bind(&TimerQueue::addTimerInLoop, this, timer));
+    loop_->runInLoop(bind(&TimerQueue::addTimerInLoop, this, timer));
     return TimerId(timer, timer->sequence());
 }
 
-void
-TimerQueue::cancel(TimerId timerId) {
-    loop_->runInLoop(boost::bind(&TimerQueue::cancelInLoop, this, timerId));
+void TimerQueue::cancel(TimerId timerId) {
+    loop_->runInLoop(bind(&TimerQueue::cancelInLoop, this, timerId));
 }
 
-void
-TimerQueue::addTimerInLoop(Timer* timer) {
+void TimerQueue::addTimerInLoop(Timer* timer) {
     loop_->assertInLoopThread();
     bool earliestChanged = insert(timer);
 
-    if (earliestChanged) {
-        resetTimerfd(timerfd_, timer->expiration());
-    }
+    if (earliestChanged) { resetTimerfd(timerfd_, timer->expiration()); }
 }
 
-void
-TimerQueue::cancelInLoop(TimerId timerId) {
+void TimerQueue::cancelInLoop(TimerId timerId) {
     loop_->assertInLoopThread();
     assert(timers_.size() == activeTimers_.size());
     ActiveTimer              timer(timerId.timer_, timerId.sequence_);
@@ -139,8 +125,7 @@ TimerQueue::cancelInLoop(TimerId timerId) {
     assert(timers_.size() == activeTimers_.size());
 }
 
-void
-TimerQueue::handleRead() {
+void TimerQueue::handleRead() {
     loop_->assertInLoopThread();
     Timestamp now(Timestamp::now());
     readTimerfd(timerfd_, now);
@@ -159,8 +144,7 @@ TimerQueue::handleRead() {
     reset(expired, now);
 }
 
-std::vector<TimerQueue::Entry>
-TimerQueue::getExpired(Timestamp now) {
+std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
     assert(timers_.size() == activeTimers_.size());
     std::vector<Entry>  expired;
     Entry               sentry(now, reinterpret_cast<Timer*>(UINTPTR_MAX));
@@ -181,13 +165,11 @@ TimerQueue::getExpired(Timestamp now) {
     return expired;
 }
 
-void
-TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now) {
+void TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now) {
     Timestamp nextExpire;
 
     for (std::vector<Entry>::const_iterator it = expired.begin();
-         it != expired.end();
-         ++it) {
+         it != expired.end(); ++it) {
         ActiveTimer timer(it->second, it->second->sequence());
         if (it->second->repeat()
             && cancelingTimers_.find(timer) == cancelingTimers_.end()) {
@@ -203,21 +185,16 @@ TimerQueue::reset(const std::vector<Entry>& expired, Timestamp now) {
         nextExpire = timers_.begin()->second->expiration();
     }
 
-    if (nextExpire.valid()) {
-        resetTimerfd(timerfd_, nextExpire);
-    }
+    if (nextExpire.valid()) { resetTimerfd(timerfd_, nextExpire); }
 }
 
-bool
-TimerQueue::insert(Timer* timer) {
+bool TimerQueue::insert(Timer* timer) {
     loop_->assertInLoopThread();
     assert(timers_.size() == activeTimers_.size());
     bool                earliestChanged = false;
     Timestamp           when            = timer->expiration();
     TimerList::iterator it              = timers_.begin();
-    if (it == timers_.end() || when < it->first) {
-        earliestChanged = true;
-    }
+    if (it == timers_.end() || when < it->first) { earliestChanged = true; }
     {
         std::pair<TimerList::iterator, bool> result =
                 timers_.insert(Entry(when, timer));

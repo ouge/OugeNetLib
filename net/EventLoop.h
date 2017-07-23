@@ -2,7 +2,6 @@
 #define BASE_EVENTLOOP_H
 
 #include "base/Copyable.h"
-#include "base/CurrentThread.h"
 #include "base/Timestamp.h"
 #include "net/Callbacks.h"
 
@@ -11,9 +10,12 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <thread>
 
-namespace ouge::net {
+namespace ouge
 
+{
+namespace net {
 class Channel;
 class Poller;
 class TimerQueue;
@@ -21,6 +23,10 @@ class TimerId;
 
 // 一个线程中最多只有一个EventLoop
 class EventLoop : NonCopyable {
+  public:
+    using Functor     = std::function<void()>;
+    using ChannelList = std::vector<Channel*>;
+
   public:
     EventLoop();
     ~EventLoop();
@@ -33,28 +39,17 @@ class EventLoop : NonCopyable {
 
     // 判断是否在IO线程当中。
     void assertInLoopThread() {
-        if (!isInLoopThread()) {
-            abortNotInLoopThread();
-        }
+        if (!isInLoopThread()) { abortNotInLoopThread(); }
     }
-    bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
+    bool isInLoopThread() const {
+        return threadId_ == std::this_thread::get_id();
+    }
 
     Timestamp pollReturnTime() const { return pollReturnTime_; }
 
-    int64_t iteration() const { return iteration_; }
-
-    using Functor = std::function<void()>;
-
-    /// Runs callback immediately in the loop thread.
-    /// It wakes up the loo-, and run the cb.
-    /// If in the same loop thread, cb is run within the function.
-    /// Safe to call from other threads.
     void runInLoop(const Functor& cb);
     void runInLoop(Functor&& cb);
 
-    /// Queues callback in the loop thread.
-    /// Runs after finish pooling.
-    /// Safe to call from other threads.
     void queueInLoop(const Functor& cb);
     void queueInLoop(Functor&& cb);
 
@@ -88,26 +83,26 @@ class EventLoop : NonCopyable {
     bool eventHandling_;
     bool callingPendingFunctors_;
 
-    int64_t     iteration_;
-    const pid_t threadId_;
-    Timestamp   pollReturnTime_;
+    const std::thread::id threadId_;
 
-    std::unique_ptr<Poller>     poller_;        //
-    std::unique_ptr<TimerQueue> timerQueue_;    //
+    Timestamp               pollReturnTime_;
+    std::unique_ptr<Poller> poller_;
+
+    std::unique_ptr<TimerQueue> timerQueue_;
 
     int                      wakeupFd_;
     std::unique_ptr<Channel> wakeupChannel_;
 
-    // scratch variables
-    using ChannelList = std::vector<Channel*>;
     ChannelList activeChannels_;
     Channel*    currentActiveChannel_;
 
-    mutable std::mutex   mutex_;
-    std::vector<Functor> pendingFunctors_;    // @GuardedBy mutex_
+    // 理论上应该立即执行的函数队列
+    std::vector<Functor> pendingFunctors_;
+
+    mutable std::mutex mutex_;
 
     boost::any context_;
 };
 }
-
+}
 #endif /* EVENTLOOP_H */

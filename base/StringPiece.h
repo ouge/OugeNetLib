@@ -8,7 +8,6 @@
 
 namespace ouge {
 
-// For passing C-style string argument to a function.
 class StringArg : public Copyable {
   public:
     StringArg(const char* str) : str_(str) {}
@@ -20,7 +19,7 @@ class StringArg : public Copyable {
     const char* str_;
 };
 
-class StringPiece {
+class StringPiece : public Copyable {
   private:
     const char* ptr_;
     int         length_;
@@ -120,7 +119,6 @@ class StringPiece {
 
 }    // namespace ouge
 
-// allow StringPiece to be logged
 std::ostream& operator<<(std::ostream& o, const ouge::StringPiece& piece);
 
 #endif /* STRINGPIECE_H */

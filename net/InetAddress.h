@@ -12,10 +12,6 @@ namespace sockets {
 const struct sockaddr* sockaddr_cast(const struct sockaddr_in* addr);
 }
 
-///
-/// Wrapper of sockaddr_in.
-///
-/// This is an POD interface class.
 class InetAddress : public Copyable {
   public:
     explicit InetAddress(uint16_t port = 0, bool loopbackOnly = false);
@@ -46,4 +42,4 @@ class InetAddress : public Copyable {
 }
 }
 
-#endif    // NET_INETADDRESS_H
+#endif

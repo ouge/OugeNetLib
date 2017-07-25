@@ -14,8 +14,8 @@
 // struct tcp_info is in <netinet/tcp.h>
 struct tcp_info;
 
-namespace ouge::net {
-
+namespace ouge {
+namespace net {
 class EventLoop;
 class Channel;
 class Socket;
@@ -40,27 +40,25 @@ class TcpConnection : NonCopyable,
     const InetAddress& peerAddress() const { return peerAddr_; }
     bool               connected() const { return state_ == kConnected; }
     bool               disconnected() const { return state_ == kDisconnected; }
-    // return true if success.
+
     bool        getTcpInfo(struct tcp_info*) const;
     std::string getTcpInfoString() const;
 
-    // void send(string&& message); // C++11
+    void send(std::string&& message);
     void send(const void* message, int len);
     void send(const StringPiece& message);
-    // void send(Buffer&& message); // C++11
-    void send(Buffer* message);    // this one will swap data
-    void shutdown();               // NOT thread safe, no simultaneous calling
-    // void shutdownAndForceCloseAfter(double seconds); // NOT thread safe, no
-    // simultaneous calling
+    void send(Buffer&& message);
+    void send(Buffer* message);
+    void shutdown();
+
     void forceClose();
     void forceCloseWithDelay(double seconds);
+
     void setTcpNoDelay(bool on);
-    // reading or not
+
     void startRead();
     void stopRead();
-    bool isReading() const {
-        return reading_;
-    };    // NOT thread safe, may race with start/stopReadInLoop
+    bool isReading() const { return reading_; };
 
     void setContext(const boost::any& context) { context_ = context; }
 
@@ -86,19 +84,16 @@ class TcpConnection : NonCopyable,
         highWaterMark_         = highWaterMark;
     }
 
-    /// Advanced interface
     Buffer* inputBuffer() { return &inputBuffer_; }
 
     Buffer* outputBuffer() { return &outputBuffer_; }
 
-    /// Internal use only.
     // TcpServer 和 TcpClient 使用
     void setCloseCallback(const CloseCallback& cb) { closeCallback_ = cb; }
 
-    // called when TcpServer accepts a new connection
-    void connectEstablished();    // should be called only once
-    // called when TcpServer has removed me from its map
-    void connectDestroyed();    // should be called only once
+    void connectEstablished();
+
+    void connectDestroyed();
 
   private:
     enum StateE {
@@ -107,6 +102,7 @@ class TcpConnection : NonCopyable,
         kConnected,       // 已连接
         kDisconnecting    // 正在断开
     };
+
     void handleRead(Timestamp receiveTime);
     void handleWrite();
     void handleClose();
@@ -138,13 +134,12 @@ class TcpConnection : NonCopyable,
     CloseCallback            closeCallback_;
     size_t                   highWaterMark_;
     Buffer                   inputBuffer_;
-    Buffer     outputBuffer_;    // FIXME: use list<Buffer> as output buffer.
-    boost::any context_;
-    // FIXME: creationTime_, lastReceiveTime_
-    //        bytesReceived_, bytesSent_
+    Buffer                   outputBuffer_;
+    boost::any               context_;
 };
 
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 }
+}
 
-#endif    // MUDUO_NET_TCPCONNECTION_H
+#endif

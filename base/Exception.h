@@ -19,7 +19,7 @@ class Exception : public std::exception {
     void fillStackTrace();
 
     std::string message_;
-    std::string stack_; 
+    std::string stack_;
 };
 }
 

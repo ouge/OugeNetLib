@@ -170,31 +170,6 @@ void TcpConnection::shutdownInLoop() {
     }
 }
 
-// void TcpConnection::shutdownAndForceCloseAfter(double seconds)
-// {
-//   // FIXME: use compare and swap
-//   if (state_ == kConnected)
-//   {
-//     setState(kDisconnecting);
-//     loop_->runInLoop(std::bind(&TcpConnection::shutdownAndForceCloseInLoop,
-//     this, seconds));
-//   }
-// }
-
-// void TcpConnection::shutdownAndForceCloseInLoop(double seconds)
-// {
-//   loop_->assertInLoopThread();
-//   if (!channel_->isWriting())
-//   {
-//     // we are not writing
-//     socket_->shutdownWrite();
-//   }
-//   loop_->runAfter(
-//       seconds,
-//       makeWeakCallback(shared_from_this(),
-//                        &TcpConnection::forceCloseInLoop));
-// }
-
 void TcpConnection::forceClose() {
     if (state_ == kConnected || state_ == kDisconnecting) {
         // FIXME: 可能出现问题
@@ -287,7 +262,7 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
         handleClose();
     } else {
         errno = savedErrno;
-        LOG_SYSERR << "TcpConnection::handleRead";
+        cerr << "TcpConnection::handleRead" << endl;
         handleError();
     }
 }
@@ -308,23 +283,23 @@ void TcpConnection::handleWrite() {
                 if (state_ == kDisconnecting) { shutdownInLoop(); }
             }
         } else {
-            LOG_SYSERR << "TcpConnection::handleWrite";
+            cerr << "TcpConnection::handleWrite";
             // if (state_ == kDisconnecting)
             // {
             //   shutdownInLoop();
             // }
         }
     } else {
-        LOG_TRACE << "Connection fd = " << channel_->fd()
-                  << " is down, no more writing";
+        cout << "Connection fd = " << channel_->fd()
+             << " is down, no more writing" << endl;
     }
 }
 
 void TcpConnection::handleClose() {
     loop_->assertInLoopThread();
-    LOG_TRACE << "fd = " << channel_->fd() << " state = " << stateToString();
+    cout << "fd = " << channel_->fd() << " state = " << stateToString() << endl;
     assert(state_ == kConnected || state_ == kDisconnecting);
-    // we don't close fd, leave it to dtor, so we can find leaks easily.
+
     setState(kDisconnected);
     channel_->disableAll();
 
@@ -336,6 +311,6 @@ void TcpConnection::handleClose() {
 
 void TcpConnection::handleError() {
     int err = sockets::getSocketError(channel_->fd());
-    LOG_ERROR << "TcpConnection::handleError [" << name_
-              << "] - SO_ERROR = " << err << " " << strerror_tl(err);
+    cerr << "TcpConnection::handleError [" << name_ << "] - SO_ERROR = " << err
+         << " " << ::strerror(err) << endl;
 }

@@ -16,8 +16,6 @@ class TimerId : public Copyable {
 
     TimerId(Timer* timer, int64_t seq) : timer_(timer), sequence_(seq) {}
 
-    // default copy-ctor, dtor and assignment are okay
-
     friend class TimerQueue;
 
   private:
@@ -27,4 +25,4 @@ class TimerId : public Copyable {
 }
 }
 
-#endif    // MUDUO_NET_TIMERID_H
+#endif

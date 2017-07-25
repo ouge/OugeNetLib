@@ -14,7 +14,6 @@ class Socket : NonCopyable {
   public:
     explicit Socket(int sockfd) : sockfd_(sockfd) {}
 
-    // Socket(Socket&&)
     ~Socket();
 
     int  fd() const { return sockfd_; }
@@ -39,6 +38,7 @@ class Socket : NonCopyable {
   private:
     const int sockfd_;
 };
-}
-}
-#endif    // MUDUO_NET_SOCKET_H
+}    // namespace net
+}    // namespace ouge
+
+#endif

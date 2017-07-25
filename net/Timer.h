@@ -10,7 +10,6 @@
 namespace ouge {
 namespace net {
 
-// Internal class for timer event.
 class Timer : NonCopyable {
   public:
     Timer(const TimerCallback& cb, Timestamp when, double interval)

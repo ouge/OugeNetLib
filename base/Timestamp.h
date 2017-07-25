@@ -9,10 +9,6 @@
 
 namespace ouge {
 
-//  Time stamp in UTC, in microseconds resolution.
-//  This class is immutable.
-//  It's recommended to pass it by value, since it's passed in register on x64.
-//
 // less_than_comparable<T> 要求类型T具有以下语义：
 // 1) bool operator<(const T&,const T&);
 // 2) bool operator>(const T&,const T&);
@@ -25,10 +21,8 @@ class Timestamp : public Copyable,
                   public boost::less_than_comparable<Timestamp>,
                   public boost::equality_comparable<Timestamp> {
   public:
-    // Constucts an invalid Timestamp.
     Timestamp() : microSecondsSinceEpoch_(0) {}
 
-    // Constucts a Timestamp at specific time
     explicit Timestamp(int64_t microSecondsSinceEpochArg)
             : microSecondsSinceEpoch_(microSecondsSinceEpochArg) {}
 
@@ -36,14 +30,11 @@ class Timestamp : public Copyable,
         std::swap(microSecondsSinceEpoch_, that.microSecondsSinceEpoch_);
     }
 
-    // default copy/assignment/dtor are Okay
-
     std::string toString() const;
     std::string toFormattedString(bool showMicroseconds = true) const;
 
     bool valid() const { return microSecondsSinceEpoch_ > 0; }
 
-    // for internal usage.
     int64_t microSecondsSinceEpoch() const { return microSecondsSinceEpoch_; }
     time_t  secondsSinceEpoch() const {
         return static_cast<time_t>(microSecondsSinceEpoch_

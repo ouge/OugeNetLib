@@ -44,7 +44,8 @@ class EventLoopThreadPool : NonCopyable {
     int                                numThreads_;
     int                                next_;
     boost::ptr_vector<EventLoopThread> threads_;
-    std::vector<EventLoop*>            loops_;
+    // 保存线程池中的所有线程持有的 Evenloop，可将其指针返回给其他线程
+    std::vector<EventLoop*> loops_;
 };
 }
 }

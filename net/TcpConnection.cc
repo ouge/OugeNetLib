@@ -74,15 +74,10 @@ void TcpConnection::send(const StringPiece& message) {
         if (loop_->isInLoopThread()) {
             sendInLoop(message);
         } else {
-            // loop_->runInLoop(std::bind(&TcpConnection::sendInLoop,
-            //                            this,    // FIXME
-            //                            message.as_string()));
             std::shared_ptr<TcpConnection> temp(shared_from_this());
             loop_->runInLoop([temp, message]() {
                 temp->sendInLoop(message.as_string());
             });
-
-            // std::forward<std::string>(message)));
         }
     }
 }
@@ -94,10 +89,6 @@ void TcpConnection::send(Buffer* buf) {
             sendInLoop(buf->peek(), buf->readableBytes());
             buf->retrieveAll();
         } else {
-            // loop_->runInLoop(std::bind(&TcpConnection::sendInLoop,
-            //                            this,    // FIXME
-            //                            buf->retrieveAllAsString()));
-            // std::forward<std::string>(message)));
             std::shared_ptr<TcpConnection> temp(shared_from_this());
             loop_->runInLoop([temp, buf]() {
                 temp->sendInLoop(buf->retrieveAllAsString());
@@ -164,10 +155,7 @@ void TcpConnection::shutdown() {
 
 void TcpConnection::shutdownInLoop() {
     loop_->assertInLoopThread();
-    if (!channel_->isWriting()) {
-        // we are not writing
-        socket_->shutdownWrite();
-    }
+    if (!channel_->isWriting()) { socket_->shutdownWrite(); }
 }
 
 void TcpConnection::forceClose() {

@@ -36,7 +36,8 @@ class Acceptor : NonCopyable {
     Channel               acceptChannel_;
     NewConnectionCallback newConnectionCallback_;
     bool                  listenning_;
-    int                   idleFd_;
+    // 用来占坑，在达到fd上限时，可以用来给额外的连接使用（ close）。
+    int idleFd_;
 };
 }
 }

@@ -6,7 +6,6 @@
 
 using namespace ouge;
 
-static_assert(sizeof(Timestamp) == sizeof(int64_t));
 
 std::string Timestamp::toString() const {
     char    buf[32]      = {0};

@@ -5,7 +5,7 @@
 #include "net/EventLoopThreadPool.h"
 #include "net/SocketsOps.h"
 
-#include <cstdio>    // snprintf
+#include <cstdio>
 #include <functional>
 #include <iostream>
 
@@ -18,7 +18,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr,
         : loop_(loop),
           ipPort_(listenAddr.toIpPort()),
           name_(nameArg),
-          acceptor_(new Acceptor(loop, listenAddr, option == kReusePort)),
+          acceptor_(new Acceptor(loop, listenAddr, olllption == kReusePort)),
           threadPool_(new EventLoopThreadPool(loop, name_)),
           connectionCallback_(defaultConnectionCallback),
           messageCallback_(defaultMessageCallback),
@@ -59,8 +59,10 @@ void TcpServer::start() {
 
 void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
     loop_->assertInLoopThread();
+    // 从线程池中取出一个 EventLoop；
     EventLoop* ioLoop = threadPool_->getNextLoop();
     char       buf[64];
+    // 每个连接的名字：服务器名+服务器端口+递增id
     snprintf(buf, sizeof buf, "-%s#%d", ipPort_.c_str(), nextConnId_);
     ++nextConnId_;
     string connName = name_ + buf;
@@ -68,16 +70,19 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
     cout << "TcpServer::newConnection [" << name_ << "] - new connection ["
          << connName << "] from " << peerAddr.toIpPort();
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
-    // FIXME poll with zero timeout to double confirm the new connection
-    // FIXME use make_shared if necessary
+    // 创建一个新TcpConnection 并和之前取得的 EventLop关联
+    // 也就让该EventLoop所属线程来处理这个连接的IO。
     TcpConnectionPtr conn(
             new TcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr));
+    // 将新连接TcpConnectionPtr 插入 map
     connections_[connName] = conn;
+    // 设置回调函数
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
     conn->setCloseCallback(
             std::bind(&TcpServer::removeConnection, this, placeholders::_1));
+    // 让连接所属线程在其线程栈上执行连接建立回调
     ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
 }
 

@@ -5,8 +5,8 @@
 #include "base/Copyable.h"
 #include "net/Endian.h"
 
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -16,11 +16,13 @@
 namespace ouge {
 namespace net {
 
+// 一块连续的内存,从头部读出数据,从末尾插入数据
 class Buffer : public Copyable {
   public:
-    static const size_t kCheapPrepend = 8;
+    static const size_t kCheapPrepend = 8;    // FIXME: 意义不大
     static const size_t kInitialSize  = 1024;
 
+  public:
     explicit Buffer(size_t initialSize = kInitialSize)
             : buffer_(kCheapPrepend + initialSize),
               readerIndex_(kCheapPrepend),
@@ -29,9 +31,6 @@ class Buffer : public Copyable {
         assert(writableBytes() == initialSize);
         assert(prependableBytes() == kCheapPrepend);
     }
-
-    // implicit copy-ctor, move-ctor, dtor and assignment are fine
-    // NOTE: implicit move-ctor is added in g++ 4.6
 
     void swap(Buffer& rhs) {
         buffer_.swap(rhs.buffer_);
@@ -48,7 +47,6 @@ class Buffer : public Copyable {
     const char* peek() const { return begin() + readerIndex_; }
 
     const char* findCRLF() const {
-        // FIXME: replace with memmem()?
         const char* crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
         return crlf == beginWrite() ? NULL : crlf;
     }
@@ -56,7 +54,6 @@ class Buffer : public Copyable {
     const char* findCRLF(const char* start) const {
         assert(peek() <= start);
         assert(start <= beginWrite());
-        // FIXME: replace with memmem()?
         const char* crlf = std::search(start, beginWrite(), kCRLF, kCRLF + 2);
         return crlf == beginWrite() ? NULL : crlf;
     }
@@ -73,9 +70,6 @@ class Buffer : public Copyable {
         return static_cast<const char*>(eol);
     }
 
-    // retrieve returns void, to prevent
-    // string str(retrieve(readableBytes()), readableBytes());
-    // the evaluation of two functions are unspecified
     void retrieve(size_t len) {
         assert(len <= readableBytes());
         if (len < readableBytes()) {
@@ -120,13 +114,13 @@ class Buffer : public Copyable {
 
     void append(const StringPiece& str) { append(str.data(), str.size()); }
 
-    void append(const char* /*restrict*/ data, size_t len) {
+    void append(const char* data, size_t len) {
         ensureWritableBytes(len);
         std::copy(data, data + len, beginWrite());
         hasWritten(len);
     }
 
-    void append(const void* /*restrict*/ data, size_t len) {
+    void append(const void* data, size_t len) {
         append(static_cast<const char*>(data), len);
     }
 
@@ -149,17 +143,11 @@ class Buffer : public Copyable {
         writerIndex_ -= len;
     }
 
-    ///
-    /// Append int64_t using network endian
-    ///
     void appendInt64(int64_t x) {
         int64_t be64 = sockets::hostToNetwork64(x);
         append(&be64, sizeof be64);
     }
 
-    ///
-    /// Append int32_t using network endian
-    ///
     void appendInt32(int32_t x) {
         int32_t be32 = sockets::hostToNetwork32(x);
         append(&be32, sizeof be32);
@@ -172,18 +160,12 @@ class Buffer : public Copyable {
 
     void appendInt8(int8_t x) { append(&x, sizeof x); }
 
-    ///
-    /// Read int64_t from network endian
-    ///
-    /// Require: buf->readableBytes() >= sizeof(int32_t)
     int64_t readInt64() {
         int64_t result = peekInt64();
         retrieveInt64();
         return result;
     }
 
-    /// Read int32_t from network endian
-    /// Require: buf->readableBytes() >= sizeof(int32_t)
     int32_t readInt32() {
         int32_t result = peekInt32();
         retrieveInt32();
@@ -202,8 +184,6 @@ class Buffer : public Copyable {
         return result;
     }
 
-    // Peek int64_t from network endian
-    // Require: buf->readableBytes() >= sizeof(int64_t)
     int64_t peekInt64() const {
         assert(readableBytes() >= sizeof(int64_t));
         int64_t be64 = 0;
@@ -211,8 +191,6 @@ class Buffer : public Copyable {
         return sockets::networkToHost64(be64);
     }
 
-    // Peek int32_t from network endian
-    // Require: buf->readableBytes() >= sizeof(int32_t)
     int32_t peekInt32() const {
         assert(readableBytes() >= sizeof(int32_t));
         int32_t be32 = 0;
@@ -233,13 +211,11 @@ class Buffer : public Copyable {
         return x;
     }
 
-    // Prepend int64_t using network endian
     void prependInt64(int64_t x) {
         int64_t be64 = sockets::hostToNetwork64(x);
         prepend(&be64, sizeof be64);
     }
 
-    // Prepend int32_t using network endian
     void prependInt32(int32_t x) {
         int32_t be32 = sockets::hostToNetwork32(x);
         prepend(&be32, sizeof be32);
@@ -252,7 +228,7 @@ class Buffer : public Copyable {
 
     void prependInt8(int8_t x) { prepend(&x, sizeof x); }
 
-    void prepend(const void* /*restrict*/ data, size_t len) {
+    void prepend(const void* data, size_t len) {
         assert(len <= prependableBytes());
         readerIndex_ -= len;
         const char* d = static_cast<const char*>(data);
@@ -260,7 +236,6 @@ class Buffer : public Copyable {
     }
 
     void shrink(size_t reserve) {
-        // FIXME: use vector::shrink_to_fit() in C++ 11 if possible.
         Buffer other;
         other.ensureWritableBytes(readableBytes() + reserve);
         other.append(toStringPiece());
@@ -269,9 +244,6 @@ class Buffer : public Copyable {
 
     size_t internalCapacity() const { return buffer_.capacity(); }
 
-    /// Read data directly into buffer.
-    /// It may implement with readv(2)
-    /// @return result of read(2), @c errno is saved
     ssize_t readFd(int fd, int* savedErrno);
 
   private:
@@ -279,12 +251,14 @@ class Buffer : public Copyable {
 
     const char* begin() const { return &*buffer_.begin(); }
 
+    //
     void makeSpace(size_t len) {
         if (writableBytes() + prependableBytes() < len + kCheapPrepend) {
-            // FIXME: move readable data
+            // 已读区间 + 可写区间 < 需要空间
+            // 扩张 vector
             buffer_.resize(writerIndex_ + len);
         } else {
-            // move readable data to the front, make space inside buffer
+            // 将未读的区间前移，扩充可写区间
             assert(kCheapPrepend < readerIndex_);
             size_t readable = readableBytes();
             std::copy(begin() + readerIndex_, begin() + writerIndex_,
@@ -297,9 +271,10 @@ class Buffer : public Copyable {
 
   private:
     std::vector<char> buffer_;
-    size_t            readerIndex_;
-    size_t            writerIndex_;
-
+    // index 使用 size_t 而不是指针是为了应对 vector 扩张引起的指针失效。
+    size_t readerIndex_;
+    size_t writerIndex_;
+    // 换行符
     static const char kCRLF[];
 };
 }

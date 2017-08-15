@@ -66,10 +66,10 @@ int sockets::accept(int sockfd, struct sockaddr_in* addr) {
             case EAGAIN:
             case ECONNABORTED:
             case EINTR:
-            case EPROTO:    // ???
+            case EPROTO:
             case EPERM:
-            case EMFILE:    // per-process lmit of open file desctiptor ???
-                // expected errors
+            case EMFILE:
+                //expected errors
                 errno = savedErrno;
                 break;
             case EBADF:
@@ -81,9 +81,11 @@ int sockets::accept(int sockfd, struct sockaddr_in* addr) {
             case ENOTSOCK:
             case EOPNOTSUPP:
                 // unexpected errors
-                cerr << "unexpected error of ::accept " << savedErrno;
+                cerr << "unexpected error of ::accept " << savedErrno << endl;
                 break;
-            default: cerr << "unknown error of ::accept " << savedErrno; break;
+            default:
+                cerr << "unknown error of ::accept " << savedErrno << endl;
+                break;
         }
     }
     return connfd;
@@ -144,7 +146,6 @@ void sockets::fromIpPort(const char* ip, uint16_t port,
 int sockets::getSocketError(int sockfd) {
     int       optval;
     socklen_t optlen = static_cast<socklen_t>(sizeof optval);
-
     if (::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
         return errno;
     } else {

@@ -83,7 +83,6 @@ class TcpServer : NonCopyable {
     }
 
   private:
-    /// Not thread safe, but in loop
     // 由Acceptor回调，创建TcpConnection对象并加入ConnectionMap中
     // 设置TcpConnection的回调函数。
     void newConnection(int sockfd, const InetAddress& peerAddr);

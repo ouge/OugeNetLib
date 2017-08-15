@@ -12,6 +12,7 @@
 
 namespace ouge {
 
+// 线程池,g
 class ThreadPool : NonCopyable {
   public:
     using Task = std::function<void()>;

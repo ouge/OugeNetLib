@@ -11,7 +11,6 @@
 #include <boost/any.hpp>
 #include <memory>
 
-// struct tcp_info is in <netinet/tcp.h>
 struct tcp_info;
 
 namespace ouge {
@@ -20,16 +19,9 @@ class EventLoop;
 class Channel;
 class Socket;
 
-///
-/// TCP connection, for both client and server usage.
-///
-/// This is an interface class, so don't expose too much details.
 class TcpConnection : NonCopyable,
                       public std::enable_shared_from_this<TcpConnection> {
   public:
-    /// Constructs a TcpConnection with a connected sockfd
-    ///
-    /// User should not create this object.
     TcpConnection(EventLoop* loop, const std::string& name, int sockfd,
                   const InetAddress& localAddr, const InetAddress& peerAddr);
     ~TcpConnection();

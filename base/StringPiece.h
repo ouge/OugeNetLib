@@ -1,5 +1,6 @@
-#ifndef STRINGPIECE_H
-#define STRINGPIECE_H
+#ifndef OUGE_BASE_STRINGPIECE_H
+#define OUGE_BASE_STRINGPIECE_H
+// TODO:delte this file
 
 #include "base/Types.h"
 #include "base/Copyable.h"
@@ -7,10 +8,12 @@
 #include <cstring>
 
 namespace ouge {
-
+// 专门用于处理字符串参数,使得 char* 和string 具有统一性
 class StringArg : public Copyable {
   public:
+    // 可隐式转换
     StringArg(const char* str) : str_(str) {}
+    // 可隐式转换
     StringArg(const std::string& str) : str_(str.c_str()) {}
 
     const char* c_str() const { return str_; }
@@ -19,15 +22,13 @@ class StringArg : public Copyable {
     const char* str_;
 };
 
+// 字符串类,封装了一些便于使用的函数
 class StringPiece : public Copyable {
   private:
     const char* ptr_;
     int         length_;
 
   public:
-    // We provide non-explicit singleton constructors so users can pass
-    // in a "const char*" or a "string" wherever a "StringPiece" is
-    // expected.
     StringPiece() : ptr_(NULL), length_(0) {}
     StringPiece(const char* str)
             : ptr_(str), length_(static_cast<int>(strlen(ptr_))) {}
@@ -38,12 +39,6 @@ class StringPiece : public Copyable {
             : ptr_(str.data()), length_(static_cast<int>(str.size())) {}
     StringPiece(const char* offset, int len) : ptr_(offset), length_(len) {}
 
-    // data() may return a pointer to a buffer with embedded NULs, and the
-    // returned buffer may or may not be null terminated.  Therefore it is
-    // typically a mistake to pass data() to a routine that expects a NUL
-    // terminated string.  Use "as_string().c_str()" if you really need to do
-    // this.  Or better yet, change your routine so it does not rely on NUL
-    // termination.
     const char* data() const { return ptr_; }
     int         size() const { return length_; }
     bool        empty() const { return length_ == 0; }
@@ -69,11 +64,13 @@ class StringPiece : public Copyable {
 
     char operator[](int i) const { return ptr_[i]; }
 
+    // 删除前 n 个字节
     void remove_prefix(int n) {
         ptr_ += n;
         length_ -= n;
     }
 
+    // 删除后 n 个字节
     void remove_suffix(int n) { length_ -= n; }
 
     bool operator==(const StringPiece& x) const {
@@ -81,17 +78,16 @@ class StringPiece : public Copyable {
     }
     bool operator!=(const StringPiece& x) const { return !(*this == x); }
 
-#define STRINGPIECE_BINARY_PREDICATE(cmp, auxcmp)                              \
-    bool operator cmp(const StringPiece& x) const {                            \
-        int r = memcmp(ptr_, x.ptr_,                                           \
-                       length_ < x.length_ ? length_ : x.length_);             \
-        return ((r auxcmp 0) || ((r == 0) && (length_ cmp x.length_)));        \
+    bool operator<(const StringPiece& x) const {
+        int r = memcmp(ptr_, x.ptr_, length_ < x.length_ ? length_ : x.length_);
+        return ((r < 0) || ((r == 0) && (length_ < x.length_)));
     }
-    STRINGPIECE_BINARY_PREDICATE(<, <);
-    STRINGPIECE_BINARY_PREDICATE(<=, <);
-    STRINGPIECE_BINARY_PREDICATE(>=, >);
-    STRINGPIECE_BINARY_PREDICATE(>, >);
-#undef STRINGPIECE_BINARY_PREDICATE
+    bool operator<=(const StringPiece& x) const {
+        int r = memcmp(ptr_, x.ptr_, length_ < x.length_ ? length_ : x.length_);
+        return ((r < 0) || ((r == 0) && (length_ <= x.length_)));
+    }
+    bool operator>(const StringPiece& x) const { return !(*this <= x); }
+    bool operator>=(const StringPiece& x) const { return !(*this < x); }
 
     int compare(const StringPiece& x) const {
         int r = memcmp(ptr_, x.ptr_, length_ < x.length_ ? length_ : x.length_);
@@ -104,13 +100,13 @@ class StringPiece : public Copyable {
         return r;
     }
 
-    std::string as_string() const { return std::string(data(), size()); }
+    std::string as_string() const { return std::string(ptr_, length_); }
 
     void CopyToString(std::string* target) const {
         target->assign(ptr_, length_);
     }
 
-    // Does "this" start with "x"
+    // 判断是不是以x开头
     bool starts_with(const StringPiece& x) const {
         return ((length_ >= x.length_)
                 && (memcmp(ptr_, x.ptr_, x.length_) == 0));
@@ -119,6 +115,9 @@ class StringPiece : public Copyable {
 
 }    // namespace ouge
 
-std::ostream& operator<<(std::ostream& o, const ouge::StringPiece& piece);
+std::ostream& operator<<(std::ostream& o, const ouge::StringPiece& piece) {
+    o << piece.as_string();
+    return o;
+}
 
-#endif /* STRINGPIECE_H */
+#endif

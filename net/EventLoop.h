@@ -21,7 +21,7 @@ class Poller;
 class TimerQueue;
 class TimerId;
 
-// 一个线程中最多只有一个EventLoop
+// EventLoop 事件循环，reactor模式的主框架
 class EventLoop : NonCopyable {
   public:
     using Functor     = std::function<void()>;
@@ -31,12 +31,18 @@ class EventLoop : NonCopyable {
     EventLoop();
     ~EventLoop();
 
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
+
     // 只在EventLoop对象的创建线程（IO线程）调用
     void loop();
 
     // 从loop()中退出，线程安全。
     void quit();
-
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
     // 判断是否在IO线程当中。
     void assertInLoopThread() {
         if (!isInLoopThread()) { abortNotInLoopThread(); }
@@ -46,7 +52,9 @@ class EventLoop : NonCopyable {
     }
 
     Timestamp pollReturnTime() const { return pollReturnTime_; }
-
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
     void runInLoop(const Functor& cb);
     void runInLoop(Functor&& cb);
 
@@ -55,6 +63,9 @@ class EventLoop : NonCopyable {
 
     size_t queueSize() const;
 
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
     TimerId runAt(const Timestamp& time, const TimerCallback& cb);
     TimerId runAfter(double delay, const TimerCallback& cb);
     TimerId runEvery(double interval, const TimerCallback& cb);
@@ -64,13 +75,18 @@ class EventLoop : NonCopyable {
     TimerId runEvery(double interval, TimerCallback&& cb);
 
     void cancel(TimerId timerId);
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
 
-    void wakeup();
     void updateChannel(Channel* channel);
     void removeChannel(Channel* channel);
     bool hasChannel(Channel* channel);
-
+    // **********************************************************
+    // **********************************************************
+    // **********************************************************
     static EventLoop* getEventLoopOfCurrentThread();
+    void              wakeup();
 
   private:
     void abortNotInLoopThread();
@@ -83,13 +99,15 @@ class EventLoop : NonCopyable {
     bool eventHandling_;
     bool callingPendingFunctors_;
 
+    // 创建 EventLoop 的线程 ID
     const std::thread::id threadId_;
-
-    Timestamp               pollReturnTime_;
+    // 阻塞等待事件的时间
+    Timestamp pollReturnTime_;
+    // 持有一个 Poller，用于观察本 Loop 线程负责的所有 fd 的事件。
     std::unique_ptr<Poller> poller_;
-
+    // 持有一个 TimeQueue，用于处理定时事件
     std::unique_ptr<TimerQueue> timerQueue_;
-
+    // 可用于唤醒 poll 状态的 loop 线程，用于pendingFunctors 中自定义
     int                      wakeupFd_;
     std::unique_ptr<Channel> wakeupChannel_;
 

@@ -8,10 +8,9 @@
 #include "base/Types.h"
 
 namespace ouge {
-
+// 将智能指针沿着继承体系向下转换
 template <typename To, typename From>
-inline std::shared_ptr<To>
-down_pointer_cast(const std::shared_ptr<From>& f) {
+inline std::shared_ptr<To> down_pointer_cast(const std::shared_ptr<From>& f) {
     assert(f == NULL || dynamic_cast<To*>(get_pointer(f)) != NULL);
     return std::static_pointer_cast<To>(f);
 }
@@ -34,9 +33,8 @@ using MessageCallback =
         std::function<void(const TcpConnectionPtr&, Buffer*, Timestamp)>;
 
 void defaultConnectionCallback(const TcpConnectionPtr& conn);
-void defaultMessageCallback(const TcpConnectionPtr& conn,
-                            Buffer*                 buffer,
-                            Timestamp               receiveTime);
+void defaultMessageCallback(const TcpConnectionPtr& conn, Buffer* buffer,
+                            Timestamp receiveTime);
 }    // namespace ouge::net
 }    // namespace ouge
 

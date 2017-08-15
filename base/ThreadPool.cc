@@ -11,19 +11,16 @@ using namespace std;
 using namespace ouge;
 
 ThreadPool::ThreadPool(const std::string& nameArg)
-        : mutex_(),
-          notEmpty_(),
-          notFull_(),
-          name_(nameArg),
-          maxQueueSize_(0),
-          running_(false) {}
+        : name_(nameArg), maxQueueSize_(0), running_(false) {}
 
 ThreadPool::~ThreadPool() {
     if (running_) { stop(); }
 }
 
+// 启动线程池
 void ThreadPool::start(int numThreads) {
     assert(threads_.empty());
+    assert(running_ == false);
     running_ = true;
     threads_.reserve(numThreads);
     for (int i = 0; i < numThreads; ++i) {
@@ -34,14 +31,17 @@ void ThreadPool::start(int numThreads) {
     if (numThreads == 0 && threadInitCallback_) { threadInitCallback_(); }
 }
 
+// 停止线程池
 void ThreadPool::stop() {
     {
         std::unique_lock<std::mutex> lock(mutex_);
+        // 更改线程池运行状态
         running_ = false;
         notEmpty_.notify_all();
     }
-    for_each(threads_.begin(), threads_.end(),
-             std::bind(&thread::join, placeholders::_1));
+    // 对每个线程调用join
+    
+    for_each(threads_.begin(), threads_.end(), [](thread& thr) { thr.join(); });
 }
 
 size_t ThreadPool::queueSize() const {
@@ -110,6 +110,6 @@ void ThreadPool::runInThread() {
     } catch (...) {
         fprintf(stderr, "unknown exception caught in ThreadPool %s\n",
                 name_.c_str());
-        throw;    // rethrow
+        throw;
     }
 }

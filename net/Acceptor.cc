@@ -37,13 +37,15 @@ void Acceptor::listen() {
     loop_->assertInLoopThread();
     listenning_ = true;
     acceptSocket_.listen();
+    // 使所属线程观察listenfd的读事件
     acceptChannel_.enableReading();
 }
 
+// 实际上就是新连接建立后的回调
 void Acceptor::handleRead() {
     loop_->assertInLoopThread();
     InetAddress peerAddr;
-    // FIXME: loop until no more
+
     int connfd = acceptSocket_.accept(&peerAddr);
     if (connfd >= 0) {
         if (newConnectionCallback_) {
@@ -52,14 +54,15 @@ void Acceptor::handleRead() {
             sockets::close(connfd);
         }
     } else {
-        std::cerr << "in Acceptor::handleRead";
-        // Read the section named "The special problem of
-        // accept()ing when you can't" in libev's doc.
-        // By Marc Lehmann, author of libev.
+        std::cerr << "in Acceptor::handleRead" << std::endl;
+
+        // 如果 fd 超最大描述符上限，解决方案是关闭连接
+        // 然而此时拿不到连接的描述符，因此可以使用 idleFd 的那个fd。
         if (errno == EMFILE) {
             ::close(idleFd_);
             idleFd_ = ::accept(acceptSocket_.fd(), NULL, NULL);
             ::close(idleFd_);
+            // 使用fd完后需归还，以便之后重复使用
             idleFd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
         }
     }
